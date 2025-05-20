@@ -1,0 +1,17 @@
+{
+  "name": "extension",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src",
+    "pretest": "npm run compile && npm run lint",
+    "test": "vscode-test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.99.0"
+  }
+}

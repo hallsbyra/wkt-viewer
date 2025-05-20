@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { extractWkt } from './wkt'
+import { extractWkt } from './wkt.js'
 import * as path from 'path'
 
 export function activate(context: vscode.ExtensionContext) {
@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
             currentPanel.reveal(currentPanel.viewColumn ?? vscode.ViewColumn.Beside)
         } else {
             const activeCol = vscode.window.activeTextEditor?.viewColumn
-            const targetCol = activeCol !== undefined ? activeCol + 1 : vscode.ViewColumn.Beside            
+            const targetCol = activeCol !== undefined ? activeCol + 1 : vscode.ViewColumn.Beside
             currentPanel = vscode.window.createWebviewPanel(
                 'wktViewer',
                 'WKT Viewer',
@@ -46,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 
             // Check if in development mode (set via launch.json or fallback)
             const isDevelopment = process.env.VSCODE_DEBUG === 'true' || process.env.NODE_ENV === 'development' || context.extensionMode === vscode.ExtensionMode.Development
-            if (isDevelopment) {                
+            if (isDevelopment) {
                 // currentPanel.webview.html = getProdWebviewContent(currentPanel.webview.cspSource, currentPanel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'webview', 'dist'))).toString())
                 currentPanel.webview.html = getDevWebviewContent()
             } else {

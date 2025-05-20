@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { extractWkt } from '../wkt'
+import { extractWkt } from '../wkt.js'
 
 suite('extractWkt', () => {
     test('extracts single valid WKT from a string', () => {

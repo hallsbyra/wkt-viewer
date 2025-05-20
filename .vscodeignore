@@ -7,7 +7,7 @@
 **/*.ts
 **/eslint.config.mjs
 **/tsconfig.json
-src/**
+extension/src/**
 **/node_modules
 
 # Ignore everything in webview/
