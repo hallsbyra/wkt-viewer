@@ -11,6 +11,9 @@
     "Other"
   ],
   "main": "./out/extension.js",
+  "workspaces": [
+    "webview"
+  ],
   "contributes": {
     "commands": [
       {
@@ -24,8 +27,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run build:webview && npm run compile",
-    "build:webview": "cd webview && npm run build",
+    "vscode:prepublish": "npm run -w webview build && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
