@@ -1,0 +1,45 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "TS Watch",
+			"type": "shell",
+			"command": "npm run watch",
+			"isBackground": true,
+			"problemMatcher": "$tsc-watch",
+			"group": "build"
+		},
+		{
+			"label": "Vite Dev",
+			"type": "shell",
+			"command": "npm run dev",
+			"isBackground": true,
+			"options": {
+				"cwd": "webview"
+			},
+			"problemMatcher": {
+				"pattern": { "regexp": ".*" },
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": ".*VITE v.*ready in.*ms.*",
+					"endsPattern": ".*VITE v.*ready in.*ms.*"
+				}
+			},
+			"group": "build"
+		},
+		{
+			"label": "Start Dev Env",
+			"dependsOn": [
+				"TS Watch",
+				"Vite Dev",
+			],
+			"dependsOrder": "parallel",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}

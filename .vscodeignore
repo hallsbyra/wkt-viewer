@@ -1,0 +1,16 @@
+.gitignore
+.vscode-test/**
+.vscode/**
+.yarnrc
+**/.vscode-test.*
+**/*.map
+**/*.ts
+**/eslint.config.mjs
+**/tsconfig.json
+src/**
+**/node_modules
+
+# Ignore everything in webview/
+webview/**
+# But explicitly include webview/dist and its contents
+!webview/dist/**
