@@ -28,21 +28,22 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run -w webview build && npm run -w extension compile",
+    "clean": "npm run clean --workspaces",
+    "vscode:prepublish": "npm run clean && npm run -w webview build && npm run -w extension compile && eslint",
     "package": "vsce package"
   },
   "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@stylistic/eslint-plugin": "^4.2.0",
     "@types/mocha": "^10.0.10",
-    "@typescript-eslint/eslint-plugin": "^8.28.0",
-    "@typescript-eslint/parser": "^8.28.0",
-    "@vitejs/plugin-react": "^4.4.1",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.3.2",
-    "eslint": "^9.23.0",
-    "typescript": "^5.8.2"
+    "eslint": "^9.26.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.32.0"
   },
   "dependencies": {
-    "ol": "^10.5.0"
   }
 }

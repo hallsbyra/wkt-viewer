@@ -23,7 +23,7 @@ export function extractWkt(input: string): string[] {
     let pos = 0
 
     while (pos < len) {
-        let nearest: { type: string; index: number } | null = null
+        let nearest: { type: string, index: number } | null = null
         for (const type of wktTypes) {
             const idx = inputUpper.indexOf(type, pos)
             if (idx !== -1 && (nearest === null || idx < nearest.index)) {
