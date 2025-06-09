@@ -10,9 +10,6 @@
 			"isBackground": true,
 			"problemMatcher": "$tsc-watch",
 			"group": "build",
-			"options": {
-				"cwd": "extension"
-			},
 		},
 		{
 			"label": "Vite Dev",

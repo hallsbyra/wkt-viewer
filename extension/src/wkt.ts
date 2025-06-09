@@ -1,3 +1,9 @@
+export type WktToken = {
+    wkt: string     // The WKT string
+    start: number   // Start index in the original input string
+    end: number     // End index in the original input string
+}
+
 /**
  * Extracts all top-level WKT (Well-Known Text) snippets from an input string.
  * Supports nested geometries (e.g., GEOMETRYCOLLECTION) but does not return inner components.
@@ -5,10 +11,10 @@
  * Does not use any third-party libraries and runs in O(n) time.
  *
  * @param input - The string containing one or more WKT snippets.
- * @returns An array of extracted top-level WKT strings.
+ * @returns An array of objects: { wkt, start, end } for each parsed WKT.
  */
-export function extractWkt(input: string): string[] {
-    const results: string[] = []
+export function extractWkt(input: string): WktToken[] {
+    const results: WktToken[]  = []
     const wktTypes = [
         'GEOMETRYCOLLECTION',
         'MULTIPOLYGON',
@@ -40,7 +46,7 @@ export function extractWkt(input: string): string[] {
 
         // Handle EMPTY geometries
         if (inputUpper.substr(i, 5) === 'EMPTY') {
-            results.push(input.slice(startIdx, i + 5))
+            results.push({ wkt: input.slice(startIdx, i + 5), start: startIdx, end: i + 5 })
             pos = i + 5
             continue
         }
@@ -54,7 +60,7 @@ export function extractWkt(input: string): string[] {
                 else if (input[j] === ')') {
                     depth--
                     if (depth === 0) {
-                        results.push(input.slice(startIdx, j + 1))
+                        results.push({ wkt: input.slice(startIdx, j + 1), start: startIdx, end: j + 1 })
                         pos = j + 1
                         break
                     }

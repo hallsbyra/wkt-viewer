@@ -12,7 +12,8 @@ export default tseslint.config(
             '**/*.js', '**/*.cjs', '**/*.mjs',
             // Build artifacts
             '**/dist/**',
-            './.vscode-test/**',
+            '**/.vscode-test/**',
+            '**/node_modules/**',
         ],
     },
     // Make @stylistic rules available

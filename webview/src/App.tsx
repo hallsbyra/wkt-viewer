@@ -1,46 +1,54 @@
 import { Position } from 'geojson'
 import * as LL from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { GeoJSON, MapContainer, useMap } from 'react-leaflet'
 import wellknown from 'wellknown'
 import { GeomObjectsList } from './GeomObjectsList'
+import { WktToken } from '../../extension/src/wkt'
 
-type GeomObject = {
-    wkt: string
+export type GeomObject = {
+    id: number
+    token: WktToken
     feature: GeoJSON.Feature
-    locked?: boolean
 }
+
+const vscode = acquireVsCodeApi()
 
 export default function App() {
     const [geomObjects, setGeomObjects] = useState<GeomObject[]>([])
-    const [selectedWkt, setSelectedWkt] = useState<string | null>(null)
+    const geomObjectsRef = useLatest(geomObjects)
+    const [selectedId, setSelectedId] = useState<number | null>(null)
 
     useEffect(() => {
         const onMessage = (event: MessageEvent) => {
             const msg = event.data
             if (msg.command === 'update') {
                 try {
-                    const wktArr = msg.wkt as string[]
-                    setGeomObjects(prevGeomObjects => {
-                        const locked = prevGeomObjects.filter(obj => obj.locked)
-                        const lockedWkts = new Set(locked.map(obj => obj.wkt))
-                        const newObjects = wktArr
-                            .filter(wktStr => !lockedWkts.has(wktStr))
-                            .map(wktStr => {
-                                const geojson = wellknown.parse(wktStr)
-                                if (!geojson) throw new Error('Invalid WKT')
-                                return {
-                                    wkt: wktStr,
-                                    feature: { type: 'Feature' as const, geometry: geojson, properties: {} },
-                                    locked: false,
-                                }
-                            })
-                        const combined = [...locked, ...newObjects]
-                        return Array.from(new Map(combined.map(obj => [obj.wkt, obj])).values())
-                    })
+                    const wktArr = msg.wkt as WktToken[]
+                    const newObjects = wktArr
+                        .map(wktToken => {
+                            const geojson = wellknown.parse(wktToken.wkt)
+                            if (!geojson) throw new Error('Invalid WKT')
+                            return {
+                                id: wktToken.start, // Use start as a unique ID
+                                token: wktToken,
+                                feature: { type: 'Feature' as const, geometry: geojson, properties: {} },
+                                locked: false,
+                            }
+                        })
+                    setGeomObjects(newObjects)
                 } catch (err) {
                     console.error(err)
+                }
+            }
+            else if (msg.command === 'select') {
+                const start = msg.start as number
+                const selected = geomObjectsRef.current.find(obj => obj.token.start <= start && obj.token.end >= start)
+                if (selected) {
+                    setSelectedId(selected.id)
+                } else {
+                    setSelectedId(null)
                 }
             }
         }
@@ -58,22 +66,21 @@ export default function App() {
             properties: {}
         }
         const geomObject: GeomObject = {
-            wkt: wellknown.stringify(randomFeature as wellknown.GeoJSONFeature),
+            id: 0,
+            token: { start: 0, end: 0, wkt: wellknown.stringify(randomFeature as wellknown.GeoJSONFeature) },
             feature: randomFeature,
-            locked: false,
         }
         setGeomObjects(prev => [...prev, geomObject])
     }
 
-    function setLocked(wkt: string, locked: boolean) {
-        setGeomObjects(prev =>
-            prev.map(obj => obj.wkt === wkt ? { ...obj, locked } : obj)
-        )
-    }
-
     // For map click selection
-    function handleSelect(wkt: string) {
-        setSelectedWkt(wkt)
+    function handleSelect(obj: GeomObject) {
+        setSelectedId(obj.id)
+        vscode.postMessage({
+            command: 'select',
+            start: obj.token.start,
+            end: obj.token.end
+        })
     }
 
     return (
@@ -81,8 +88,7 @@ export default function App() {
             <div style={{ width: 320, background: '#f9f9f9', borderRight: '1px solid #eee', overflow: 'auto', padding: 8 }}>
                 <GeomObjectsList
                     geomObjects={geomObjects}
-                    setLocked={setLocked}
-                    selectedWkt={selectedWkt}
+                    selectedId={selectedId}
                     onSelect={handleSelect}
                 />
             </div>
@@ -92,7 +98,7 @@ export default function App() {
                     style={{ height: '100%', width: '100%' }}
                     maxBounds={[[-Infinity, -Infinity], [Infinity, Infinity]]}
                 >
-                    <GeomObjectsMap geomObjects={geomObjects} selectedWkt={selectedWkt} onSelect={handleSelect} />
+                    <GeomObjectsMap geomObjects={geomObjects} selectedId={selectedId} onSelect={handleSelect} />
                 </MapContainer>
                 <button onClick={testButtonClicked} style={{ position: 'absolute', top: 12, right: 12, zIndex: 1000 }}>
                     Test
@@ -104,12 +110,12 @@ export default function App() {
 
 function GeomObjectsMap({
     geomObjects,
-    selectedWkt,
+    selectedId,
     onSelect
 }: {
     geomObjects: GeomObject[]
-    selectedWkt?: string | null
-    onSelect?: (wkt: string) => void
+    selectedId?: number | null
+    onSelect?: (obj: GeomObject) => void
 }) {
     const map = useMap()
     const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry)) ?? [[-90, -180], [90, 180]]
@@ -117,7 +123,7 @@ function GeomObjectsMap({
 
     // Provide a different style for selected
     function styleFn(geomObj: GeomObject) {
-        if (geomObj.wkt === selectedWkt) {
+        if (geomObj.id === selectedId) {
             return {
                 color: '#0288d1',
                 weight: 6,
@@ -135,15 +141,15 @@ function GeomObjectsMap({
         }
     }
 
-    const handleFeatureClick = (geomObj: GeomObject) => (feature: GeoJSON.Feature, layer: LL.Layer) => {
+    const handleFeatureClick = (geomObj: GeomObject) => (_feature: GeoJSON.Feature, layer: LL.Layer) => {
         layer.on('click', function (_) {
-            if (onSelect) onSelect(geomObj.wkt)
+            if (onSelect) onSelect(geomObj)
         })
     }
 
     return geomObjects.map(geomObj =>
         <GeoJSON
-            key={geomObj.wkt}
+            key={geomObj.token.wkt}
             data={geomObj.feature}
             onEachFeature={handleFeatureClick(geomObj)}
             style={() => styleFn(geomObj)}
@@ -180,4 +186,18 @@ function calculateBoundingBox(geometries: GeoJSON.Geometry[]) {
         }
     }
     return [[minY, minX], [maxY, maxX]] as [[number, number], [number, number]]
+}
+
+
+/**
+ * Keeps a mutable ref containing the latest value. Whenever the `value` changes
+ * we update the `.current` field. Inside callbacks you can always read
+ * `latest.current` and be sure it is up‑to‑date.
+ */
+function useLatest<T>(value: T) {
+    const latestRef = useRef(value)
+    useEffect(() => {
+        latestRef.current = value
+    }, [value])
+    return latestRef
 }

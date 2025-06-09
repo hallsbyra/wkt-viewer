@@ -1,5 +1,7 @@
 {
 	"compilerOptions": {
+		"tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
+		"composite": true,
 		"esModuleInterop": true,
 		"module": "CommonJS",
 		"target": "ES2022",

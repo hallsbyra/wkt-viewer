@@ -30,6 +30,7 @@
   "scripts": {
     "clean": "npm run clean --workspaces",
     "vscode:prepublish": "npm run clean && npm run -w webview build && npm run -w extension compile && eslint",
+    "watch": "tsc --build --watch",
     "package": "vsce package"
   },
   "devDependencies": {
