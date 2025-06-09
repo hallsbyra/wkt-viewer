@@ -1,9 +1,21 @@
 {
   "name": "wkt-viewer",
   "displayName": "WKT Viewer",
-  "description": "A VS Code extension to view WKT geometries dynamically based on text selection.",
+  "description": "A VS Code extension to visualize WKT (Well-Known Text) geometries in text files.",
+  "keywords": [
+    "vscode",
+    "extension",
+    "wkt",
+    "viewer",
+    "geometry",
+    "visualization"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hallsbyra/wkt-viewer"
+  },
   "version": "0.0.1",
-  "publisher": "your-publisher-name",
+  "publisher": "halls-byra",
   "engines": {
     "vscode": "^1.99.0"
   },

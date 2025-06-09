@@ -1,22 +1,24 @@
-# wkt-viewer README
+# WKT Viewer
 
+Visualize WKT (Well Known Text) geometries in text files. Its main purpose is to assist debugging large log files containig WKT.
+
+![Preview Image](preview.gif)
 
 ## Features
 
-TODO
+* Visualizes all found WKT in the current text editor.
+* Highlights the "current" geometry as you navigate the text.
+* Selects the corresponding text if you click on a geometry.
 
-## Requirements
-
-TODO
 
 ## Extension Settings
 
-TODO
+None for now.
 
 ## Known Issues
 
-TODO
-
+* There's a hard coded cap on the first 500 geometries found in the text. This should be a setting.
+* No theme support.
 
 ## Developing
 
