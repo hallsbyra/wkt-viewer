@@ -21,6 +21,24 @@ function postMsgToVscode(msg: MsgFromWebview) {
     vscode.postMessage(msg)
 }
 
+function wktTokensToGeomObjects(wktTokens: WktToken[]): GeomObject[] {
+    return wktTokens.map(wktToken => {
+        const geojson = wellknown.parse(wktToken.wkt)
+        if (!geojson) throw new Error('Invalid WKT: ' + wktToken.wkt)
+        return {
+            id: wktToken.start,
+            token: wktToken,
+            feature: { type: 'Feature', geometry: geojson, properties: {} },
+        }
+    })
+}
+
+function findSelectedGeomObject(geomObjects: GeomObject[], start: number, line: number): GeomObject | null {
+    const geomsOnSameLine = geomObjects.filter(obj => obj.token.line <= line && obj.token.endLine >= line)
+    // Find the first geometry that contains the start position, or the first on the line.
+    return geomsOnSameLine.find(obj => obj.token.start <= start && obj.token.end >= start) ?? geomsOnSameLine[0] ?? null
+}
+
 
 export default function App() {
     const [geomObjects, setGeomObjects] = useState<GeomObject[]>([])
@@ -33,24 +51,11 @@ export default function App() {
             try {
                 if (msg.data.command === 'update') {
                     console.log(`'update' message received`, msg.data.wkt)
-                    setGeomObjects(
-                        msg.data.wkt.map(wktToken => {
-                            const geojson = wellknown.parse(wktToken.wkt)
-                            if (!geojson) throw new Error('Invalid WKT')
-                            return {
-                                id: wktToken.start,
-                                token: wktToken,
-                                feature: { type: 'Feature', geometry: geojson, properties: {} },
-                            }
-                        })
-                    )
+                    setGeomObjects(wktTokensToGeomObjects(msg.data.wkt))
                 } else if (msg.data.command === 'select') {
                     console.log(`'select' message received`, msg.data.start, msg.data.end)
-                    const start = msg.data.start
-                    const found = geomObjectsRef.current.find(
-                        obj => obj.token.start <= start && obj.token.end >= start
-                    )
-                    setSelectedId(found ? found.id : null)
+                    const selectedObj = findSelectedGeomObject(geomObjectsRef.current, msg.data.start, msg.data.line)
+                    setSelectedId(selectedObj?.id ?? null)
                 } else {
                     console.warn(`Unknown message received: ${msg.data}`)
                 }

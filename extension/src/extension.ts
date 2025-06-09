@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
             const selection = event.selections[0]
             const start = event.textEditor.document.offsetAt(selection.start)
             const end = event.textEditor.document.offsetAt(selection.end)
-            postMessageToWebview(currentPanel, { command: 'select', start, end })
+            postMessageToWebview(currentPanel, { command: 'select', start, end, line: selection.start.line })
         }
     })
 

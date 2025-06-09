@@ -4,7 +4,7 @@ import { extractWkt } from './wkt.js'
 suite('extractWkt', () => {
     test('extracts single valid WKT from a string', () => {
         const input = 'POINT (30 10)'
-        const expected = [{ start: 0, end: 13, wkt: 'POINT (30 10)' }]
+        const expected = [{ start: 0, end: 13, wkt: 'POINT (30 10)', line: 0, endLine: 0 }]
         const result = extractWkt(input)
         assert.deepStrictEqual(result, expected)
     })
@@ -15,10 +15,14 @@ suite('extractWkt', () => {
             start: 0,
             end: 13,
             wkt: 'POINT (30 10)',
+            line: 0,
+            endLine: 0,
         }, {
             start: 38,
             end: 51,
-            wkt: 'POINT (40 20)'
+            wkt: 'POINT (40 20)',
+            line: 0,
+            endLine: 0,
         }]
         const result = extractWkt(input)
         assert.deepStrictEqual(result, expected)
@@ -33,6 +37,8 @@ suite('extractWkt', () => {
                 start: 9,
                 end: 124,
                 wkt: 'POLYGON ((-85.57993 192.87844, -59.26594 219.19242, -16.97565 176.90214, -43.28964 150.58815, -85.57993 192.87844))',
+                line: 1,
+                endLine: 1,
             }
         ]
         const result = extractWkt(input)
@@ -51,14 +57,28 @@ GEOMETRYCOLLECTION (GEOMETRYCOLLECTION(POINT (20 10)), GEOMETRYCOLLECTION(LINEST
 POLYGON ((8.45 28.15, 17.3 28.15, 17.3 21.1, 8.45 21.1, 8.45 28.15), (10.75 26.15, 14.2 26.15, 14.2 23.5, 10.75 23.5, 10.75 26.15))
         `
         const expected = [
-            { start: 20, end: 135, wkt: 'POLYGON ((-85.57993 192.87844, -59.26594 219.19242, -16.97565 176.90214, -43.28964 150.58815, -85.57993 192.87844))' },
-            { start: 159, end: 227, wkt: 'GEOMETRYCOLLECTION (POINT (20 10), LINESTRING (30 10, 10 30, 40 40))' },
-            { start: 262, end: 370, wkt: 'GEOMETRYCOLLECTION (GEOMETRYCOLLECTION(POINT (20 10)), GEOMETRYCOLLECTION(LINESTRING (30 10, 10 30, 40 40)))' },
-            { start: 398, end: 529, wkt: 'POLYGON ((8.45 28.15, 17.3 28.15, 17.3 21.1, 8.45 21.1, 8.45 28.15), (10.75 26.15, 14.2 26.15, 14.2 23.5, 10.75 23.5, 10.75 26.15))' },
+            { start: 20, end: 135,  line: 2, endLine: 2, wkt: 'POLYGON ((-85.57993 192.87844, -59.26594 219.19242, -16.97565 176.90214, -43.28964 150.58815, -85.57993 192.87844))' },
+            { start: 159, end: 227, line: 4, endLine: 4, wkt: 'GEOMETRYCOLLECTION (POINT (20 10), LINESTRING (30 10, 10 30, 40 40))' },
+            { start: 262, end: 370, line: 6, endLine: 6, wkt: 'GEOMETRYCOLLECTION (GEOMETRYCOLLECTION(POINT (20 10)), GEOMETRYCOLLECTION(LINESTRING (30 10, 10 30, 40 40)))' },
+            { start: 398, end: 529, line: 8, endLine: 8, wkt: 'POLYGON ((8.45 28.15, 17.3 28.15, 17.3 21.1, 8.45 21.1, 8.45 28.15), (10.75 26.15, 14.2 26.15, 14.2 23.5, 10.75 23.5, 10.75 26.15))' },
         ]
         const result = extractWkt(input)
         assert.deepStrictEqual(result, expected)
     })
+
+    test('extracts multi line WKT', () => {
+        const input = `
+POLYGON (
+    (1.1 1.1, 2.2 2.2)
+)
+        `
+        const expected = [
+            { start: 1, end: 35,  line: 1, endLine: 3, wkt: 'POLYGON (\n    (1.1 1.1, 2.2 2.2)\n)' },
+        ]
+        const result = extractWkt(input)
+        assert.deepStrictEqual(result, expected)
+    })
+
 
     test('malformed WKT', () => {
         const input = `
@@ -70,7 +90,7 @@ POLYGON ((8.45 28.15, 17.3 28.15, 17.3 21.1, 8.45 21.1, 8.45 28.15), (10.75 26.1
 
     test('respects maxTokens parameter', () => {
         const input = 'POINT (30 10) POINT (40 20) POINT (50 30)'
-        const expected = [{ start: 0, end: 13, wkt: 'POINT (30 10)' }]
+        const expected = [{ start: 0, end: 13, wkt: 'POINT (30 10)', line: 0, endLine: 0 }]
         const result = extractWkt(input, 1)
         assert.deepStrictEqual(result, expected)
     })
