@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { GeomObject } from './App'
 
 export function GeomObjectsList({
@@ -9,10 +10,24 @@ export function GeomObjectsList({
     selectedId?: number | null
     onSelect?: (obj: GeomObject) => void
 }) {
+
+    const listContainerRef = useRef<HTMLUListElement  | null>(null)
+    
+    /* -------- Scroll the selected list item into view -------- */
+    useEffect(() => {
+        if (selectedId == null) return
+        // Each list row must have data-geom-id={id}
+        const row = listContainerRef.current?.querySelector<HTMLElement>(`[data-geom-id="${selectedId}"]`)
+        row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }, [selectedId])
+
     return (
         <div>
             <h3 style={{ margin: '4px 0 8px 0' }}>Geometries ({geomObjects.length})</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            <ul 
+                ref={listContainerRef}
+                style={{ listStyle: 'none', padding: 0, margin: 0 }}
+            >
                 {geomObjects.map((obj, idx) => (
                     <li key={obj.id}
                         style={{
@@ -29,6 +44,8 @@ export function GeomObjectsList({
                             borderColor: obj.id === selectedId ? '#0288d1' : 'transparent',
                             transition: 'border-color 0.1s',
                         }}
+                        // So that we can find this element and scroll it into view
+                        data-geom-id={obj.id}
                         onClick={() => onSelect && onSelect(obj)}
                     >
 

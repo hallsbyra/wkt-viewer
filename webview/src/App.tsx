@@ -85,13 +85,18 @@ export default function App() {
 
     return (
         <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
-            <div style={{ width: 320, background: '#f9f9f9', borderRight: '1px solid #eee', overflow: 'auto', padding: 8 }}>
+            {/* ---------- Side list ---------- */}
+            <div
+                style={{ width: 320, background: '#f9f9f9', borderRight: '1px solid #eee', overflow: 'auto', padding: 8 }}
+            >
                 <GeomObjectsList
                     geomObjects={geomObjects}
                     selectedId={selectedId}
                     onSelect={handleSelect}
                 />
             </div>
+
+            {/* ---------- Map area ---------- */}
             <div style={{ flex: 1, position: 'relative' }}>
                 <MapContainer
                     crs={LL.CRS.Simple}
@@ -149,7 +154,7 @@ function GeomObjectsMap({
 
     return geomObjects.map(geomObj =>
         <GeoJSON
-            key={geomObj.token.wkt}
+            key={geomObj.id}
             data={geomObj.feature}
             onEachFeature={handleFeatureClick(geomObj)}
             style={() => styleFn(geomObj)}
