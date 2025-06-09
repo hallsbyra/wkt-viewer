@@ -3,7 +3,7 @@ import 'leaflet/dist/leaflet.css'
 import { useEffect, useState, useCallback } from 'react'
 import { MapContainer } from 'react-leaflet'
 import wellknown from 'wellknown'
-import { WktToken } from '../../extension/src/wkt'
+import { MsgFromWebview, MsgToWebview, WktToken } from '../../extension/src/public-types'
 import { GeomObjectsList } from './GeomObjectsList'
 import { GeomObjectsMap } from './GeomObjectsMap'
 import { useLatest } from './react-util'
@@ -16,6 +16,12 @@ export type GeomObject = {
 
 const vscode = acquireVsCodeApi()
 
+function postMsgToVscode(msg: MsgFromWebview) {
+    console.log('Posting message to VSCode:', msg)
+    vscode.postMessage(msg)
+}
+
+
 export default function App() {
     const [geomObjects, setGeomObjects] = useState<GeomObject[]>([])
     const geomObjectsRef = useLatest(geomObjects)
@@ -23,13 +29,12 @@ export default function App() {
 
     // --- VSCode Message Listener ---
     useEffect(() => {
-        function onMessage(event: MessageEvent) {
-            const { command, wkt, start } = event.data
-            if (command === 'update') {
-                try {
-                    const wktArr = wkt as WktToken[]
+        function onMessage(msg: MessageEvent<MsgToWebview>) {
+            try {
+                if (msg.data.command === 'update') {
+                    console.log(`'update' message received`, msg.data.wkt)
                     setGeomObjects(
-                        wktArr.map(wktToken => {
+                        msg.data.wkt.map(wktToken => {
                             const geojson = wellknown.parse(wktToken.wkt)
                             if (!geojson) throw new Error('Invalid WKT')
                             return {
@@ -39,14 +44,18 @@ export default function App() {
                             }
                         })
                     )
-                } catch (err) {
-                    console.error(err)
+                } else if (msg.data.command === 'select') {
+                    console.log(`'select' message received`, msg.data.start, msg.data.end)
+                    const start = msg.data.start
+                    const found = geomObjectsRef.current.find(
+                        obj => obj.token.start <= start && obj.token.end >= start
+                    )
+                    setSelectedId(found ? found.id : null)
+                } else {
+                    console.warn(`Unknown message received: ${msg.data}`)
                 }
-            } else if (command === 'select') {
-                const found = geomObjectsRef.current.find(
-                    obj => obj.token.start <= start && obj.token.end >= start
-                )
-                setSelectedId(found ? found.id : null)
+            } catch (err) {
+                console.error('Error while handling message from extension', err)
             }
         }
         window.addEventListener('message', onMessage)
@@ -56,7 +65,7 @@ export default function App() {
     // --- Handle selection (from list or map) ---
     const handleSelect = useCallback((obj: GeomObject) => {
         setSelectedId(obj.id)
-        vscode.postMessage({
+        postMsgToVscode({
             command: 'select',
             start: obj.token.start,
             end: obj.token.end,

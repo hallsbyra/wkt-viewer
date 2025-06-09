@@ -10,7 +10,6 @@ export function GeomObjectsList({
     selectedId?: number | null
     onSelect?: (obj: GeomObject) => void
 }) {
-
     const listContainerRef = useRef<HTMLUListElement  | null>(null)
     
     /* -------- Scroll the selected list item into view -------- */

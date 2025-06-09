@@ -13,7 +13,7 @@ export type WktToken = {
  * @param input - The string containing one or more WKT snippets.
  * @returns An array of objects: { wkt, start, end } for each parsed WKT.
  */
-export function extractWkt(input: string): WktToken[] {
+export function extractWkt(input: string, maxTokens: number = Infinity): WktToken[] {
     const results: WktToken[]  = []
     const wktTypes = [
         'GEOMETRYCOLLECTION',
@@ -28,7 +28,7 @@ export function extractWkt(input: string): WktToken[] {
     const len = input.length
     let pos = 0
 
-    while (pos < len) {
+    while (pos < len && results.length < maxTokens) {
         let nearest: { type: string, index: number } | null = null
         for (const type of wktTypes) {
             const idx = inputUpper.indexOf(type, pos)

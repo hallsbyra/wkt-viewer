@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { extractWkt } from './wkt.js'
 import * as path from 'path'
+import { MsgFromWebview, MsgToWebview } from './public-types.js'
 
 const MAX_WKTS = 500
 
@@ -8,7 +9,6 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Activating WKT Viewer extension')
     let currentPanel: vscode.WebviewPanel | undefined = undefined
     let lastTextEditor: vscode.TextEditor | undefined = undefined
-    const savedShapes: string[] = []
 
     vscode.workspace.onDidChangeTextDocument(event => {
         if (currentPanel && event.document === vscode.window.activeTextEditor?.document) {
@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
             const selection = event.selections[0]
             const start = event.textEditor.document.offsetAt(selection.start)
             const end = event.textEditor.document.offsetAt(selection.end)
-            currentPanel.webview.postMessage({ command: 'select', start, end })
+            postMessageToWebview(currentPanel, { command: 'select', start, end })
         }
     })
 
@@ -59,21 +59,14 @@ export function activate(context: vscode.ExtensionContext) {
                 currentPanel.webview.html = getProdWebviewContent(currentPanel.webview.cspSource, currentPanel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'webview', 'dist'))).toString())
             }
 
-            // Send a test message to the webview
-            currentPanel.webview.postMessage({ command: 'test', message: 'Hello from the extension!' })
-
             // Handle messages from the webview
             currentPanel.webview.onDidReceiveMessage(
-                message => {
+                (message: MsgFromWebview) => {
                     console.log('Webview message received', message)
-                    switch (message.command) {
-                        case 'save':
-                            savedShapes.push(message.wkt)
-                            vscode.window.showInformationMessage('Shape saved!')
-                            break
-                        case 'select':
-                            selectTextInEditor(lastTextEditor, message.start, message.end)                            
-                            break
+                    if (message.command === 'select') {
+                        selectTextInEditor(lastTextEditor, message.start, message.end)
+                    } else {
+                        console.warn(`Unknown message command: ${message.command}`)
                     }
                 },
                 undefined,
@@ -144,12 +137,11 @@ export function deactivate() { }
 
 function postAllWkt(panel: vscode.WebviewPanel, document: vscode.TextDocument) {
     const allText = document.getText()
-    const wktArr = extractWkt(allText).slice(0, MAX_WKTS)
-    panel.webview.postMessage({ command: 'update', wkt: wktArr })
+    const wktArr = extractWkt(allText, MAX_WKTS)
+    postMessageToWebview(panel, { command: 'update', wkt: wktArr })
 }
 
 function selectTextInEditor(editor: vscode.TextEditor | undefined, start: number, end: number) {
-    console.log('Current editor:', editor)
     if (!editor) return
 
     // Convert offsets to Positions
@@ -163,4 +155,13 @@ function selectTextInEditor(editor: vscode.TextEditor | undefined, start: number
     // Select the range and reveal it
     editor.selection = new vscode.Selection(startPos, endPos)
     editor.revealRange(range, vscode.TextEditorRevealType.InCenter)
+}
+
+function postMessageToWebview(panel: vscode.WebviewPanel, message: MsgToWebview) {
+    console.log('Posting message to webview:', message)
+    if (panel && panel.webview) {
+        panel.webview.postMessage(message)
+    } else {
+        console.warn('Webview panel is not available')
+    }
 }

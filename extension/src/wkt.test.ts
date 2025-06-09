@@ -51,7 +51,7 @@ GEOMETRYCOLLECTION (GEOMETRYCOLLECTION(POINT (20 10)), GEOMETRYCOLLECTION(LINEST
 POLYGON ((8.45 28.15, 17.3 28.15, 17.3 21.1, 8.45 21.1, 8.45 28.15), (10.75 26.15, 14.2 26.15, 14.2 23.5, 10.75 23.5, 10.75 26.15))
         `
         const expected = [
-            { start:  20, end: 135, wkt: 'POLYGON ((-85.57993 192.87844, -59.26594 219.19242, -16.97565 176.90214, -43.28964 150.58815, -85.57993 192.87844))' },
+            { start: 20, end: 135, wkt: 'POLYGON ((-85.57993 192.87844, -59.26594 219.19242, -16.97565 176.90214, -43.28964 150.58815, -85.57993 192.87844))' },
             { start: 159, end: 227, wkt: 'GEOMETRYCOLLECTION (POINT (20 10), LINESTRING (30 10, 10 30, 40 40))' },
             { start: 262, end: 370, wkt: 'GEOMETRYCOLLECTION (GEOMETRYCOLLECTION(POINT (20 10)), GEOMETRYCOLLECTION(LINESTRING (30 10, 10 30, 40 40)))' },
             { start: 398, end: 529, wkt: 'POLYGON ((8.45 28.15, 17.3 28.15, 17.3 21.1, 8.45 21.1, 8.45 28.15), (10.75 26.15, 14.2 26.15, 14.2 23.5, 10.75 23.5, 10.75 26.15))' },
@@ -68,6 +68,10 @@ POLYGON ((8.45 28.15, 17.3 28.15, 17.3 21.1, 8.45 21.1, 8.45 28.15), (10.75 26.1
         assert.deepStrictEqual(result, [])
     })
 
-
-
+    test('respects maxTokens parameter', () => {
+        const input = 'POINT (30 10) POINT (40 20) POINT (50 30)'
+        const expected = [{ start: 0, end: 13, wkt: 'POINT (30 10)' }]
+        const result = extractWkt(input, 1)
+        assert.deepStrictEqual(result, expected)
+    })
 })
