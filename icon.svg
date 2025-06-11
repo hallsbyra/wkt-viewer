@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="227.0154"
+   height="179"
+   viewBox="0 0 227.0154 179"
+   fill="none"
+   version="1.1"
+   id="svg16"
+   sodipodi:docname="icon.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   inkscape:export-filename="icon.png"
+   inkscape:export-xdpi="216.51395"
+   inkscape:export-ydpi="216.51395"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs16" />
+  <sodipodi:namedview
+     id="namedview16"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showguides="false"
+     inkscape:zoom="7.1054688"
+     inkscape:cx="113.50412"
+     inkscape:cy="66.920285"
+     inkscape:window-width="1649"
+     inkscape:window-height="1266"
+     inkscape:window-x="9275"
+     inkscape:window-y="274"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg16" />
+  <!-- Background is transparent -->
+  <!-- Code panel -->
+  <rect
+     x="1.5"
+     y="1.5"
+     width="90"
+     height="176"
+     rx="12"
+     fill="#222b36"
+     stroke="#222b36"
+     stroke-width="3"
+     id="rect1" />
+  <!-- Code panel buttons -->
+  <circle
+     cx="17.5"
+     cy="17.5"
+     r="4"
+     fill="#6c7a89"
+     id="circle1" />
+  <circle
+     cx="29.5"
+     cy="17.5"
+     r="4"
+     fill="#6c7a89"
+     id="circle2" />
+  <circle
+     cx="41.5"
+     cy="17.5"
+     r="4"
+     fill="#6c7a89"
+     id="circle3" />
+  <!-- Code lines -->
+  <rect
+     x="17.5"
+     y="37.5"
+     width="65"
+     height="7"
+     rx="3.5"
+     fill="#4b5a6b"
+     id="rect3" />
+  <rect
+     x="17.5"
+     y="53.5"
+     width="50"
+     height="7"
+     rx="3.5"
+     fill="#4b5a6b"
+     id="rect4" />
+  <rect
+     x="17.5"
+     y="69.5"
+     width="70"
+     height="7"
+     rx="3.5"
+     fill="#4b5a6b"
+     id="rect5" />
+  <!-- Selected line (yellow) -->
+  <rect
+     x="17.5"
+     y="85.5"
+     width="60"
+     height="9"
+     rx="4.5"
+     fill="#ffd600"
+     id="rect6" />
+  <rect
+     x="17.5"
+     y="101.5"
+     width="70"
+     height="7"
+     rx="3.5"
+     fill="#4b5a6b"
+     id="rect7" />
+  <rect
+     x="17.5"
+     y="117.5"
+     width="50"
+     height="7"
+     rx="3.5"
+     fill="#4b5a6b"
+     id="rect8" />
+  <rect
+     x="17.5"
+     y="133.5"
+     width="65"
+     height="7"
+     rx="3.5"
+     fill="#4b5a6b"
+     id="rect9" />
+  <rect
+     x="17.5"
+     y="149.5"
+     width="70"
+     height="7"
+     rx="3.5"
+     fill="#4b5a6b"
+     id="rect10" />
+  <!-- Arrow with bold dark border -->
+  <!-- Geometry panel -->
+  <rect
+     x="135.99377"
+     y="1.9783821"
+     width="89.043236"
+     height="175.04324"
+     rx="10.17637"
+     fill="#ffffff"
+     stroke="#181b1f"
+     stroke-width="3.95676"
+     id="rect11" />
+  <!-- Grey polygons -->
+  <path
+     d="m 163.86976,45.28008 -0.35974,49.13716 c 15.81087,-0.0376 31.62073,0.0384 47.43098,0.13268 l -0.46444,-49.191284 z"
+     style="stroke:#1976d1;stroke-width:4.65242;stroke-opacity:1"
+     id="path16"
+     sodipodi:nodetypes="ccccc" />
+  <path
+     d="m 152.42158,121.10488 32.38479,39.41385 22.48787,-44.24504 z"
+     style="stroke:#757575;stroke-width:6.1605"
+     id="path16-3"
+     sodipodi:nodetypes="cccc" />
+  <path
+     d="M 217.92134,38.938483 195.55956,16.850406 175.40422,33.544349 157.53067,15.670792 144.73826,61.03414"
+     style="stroke:#757575;stroke-width:6.1605"
+     id="path16-3-7"
+     sodipodi:nodetypes="ccccc" />
+  <!-- Blue, thicker polygon (selected) -->
+  <!-- Geometry points -->
+  <g
+     id="g10"
+     transform="matrix(-1,0,0,1,281.41232,-38.92221)">
+    <polygon
+       points="160,152 120,128 160,104 160,120 208,120 208,136 160,136 "
+       fill="#1976d2"
+       stroke="#181b1f"
+       stroke-width="6"
+       stroke-linejoin="round"
+       id="polygon10"
+       transform="matrix(0.71956418,0,0,1.0179292,45.921146,-2.2949333)" />
+  </g>
+</svg>
