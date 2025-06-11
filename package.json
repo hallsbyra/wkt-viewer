@@ -1,7 +1,7 @@
 {
   "name": "wkt-viewer",
   "displayName": "WKT Viewer",
-  "description": "A VS Code extension to visualize WKT (Well-Known Text) geometries in text files.",
+  "description": "A VS Code extension to visualize and navigate files containing WKT (Well Known Text) geometries.",
   "keywords": [
     "vscode",
     "extension",
