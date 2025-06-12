@@ -4,9 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "clean": "rimraf dist",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && eslint",
+    "build": "tsc -p ./",
     "test": "vscode-test"
   },
   "dependencies": {},

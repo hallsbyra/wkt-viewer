@@ -41,8 +41,10 @@
     ]
   },
   "scripts": {
+    "build": "npm run build --workspaces && npm run lint",
     "clean": "npm run clean --workspaces",
-    "vscode:prepublish": "npm run clean && npm run -w webview build && npm run -w extension compile && eslint",
+    "lint": "eslint",
+    "vscode:prepublish": "npm run clean && npm run build",
     "watch": "tsc --build --watch",
     "package": "vsce package",
     "test": "npm run test --workspaces"
