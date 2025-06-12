@@ -1,3 +1,5 @@
+[![CI](https://github.com/hallsbyra/wkt-viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/hallsbyra/wkt-viewer/actions/workflows/ci.yml)
+
 # WKT Viewer
 
 Visualize and navigate files containing WKT (Well Known Text) geometries in Visual Studio Code.
