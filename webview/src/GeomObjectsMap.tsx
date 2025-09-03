@@ -2,6 +2,35 @@ import * as LL from 'leaflet'
 import * as RL from 'react-leaflet'
 import { GeomObject } from './App'
 import { calculateBoundingBox } from './geojson-util'
+import { useEffect } from 'react'
+
+// ---- Style & Color Constants ----
+const COLOR = {
+    selectedStroke: '#0288d1',
+    selectedFill: '#b3e5fc',
+    defaultStroke: '#555',
+    defaultFill: '#ccc',
+}
+
+const SELECTED_PATH_STYLE: LL.PathOptions = {
+    color: COLOR.selectedStroke,
+    weight: 4,
+    opacity: 1,
+    fillColor: COLOR.selectedFill,
+    fillOpacity: 0.6,
+}
+
+const DEFAULT_PATH_STYLE: LL.PathOptions = {
+    color: COLOR.defaultStroke,
+    weight: 2,
+    opacity: 0.8,
+    fillColor: COLOR.defaultFill,
+    fillOpacity: 0.25,
+}
+
+const POINT_RADIUS = 6
+const POINT_RADIUS_SELECTED = 7
+// ---- End constants ----
 
 export function GeomObjectsMap({
     geomObjects,
@@ -13,42 +42,42 @@ export function GeomObjectsMap({
     onSelect?: (obj: GeomObject) => void
 }) {
     const map = RL.useMap()
-    const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry)) ?? [[-90, -180], [90, 180]]
-    map.fitBounds(bounds)
 
-    // Provide a different style for selected
-    function styleFn(geomObj: GeomObject) {
-        if (geomObj.id === selectedId) {
-            return {
-                color: '#0288d1',
-                weight: 6,
-                opacity: 1,
-                fillColor: '#b3e5fc',
-                fillOpacity: 0.5,
-            }
-        }
-        return {
-            color: '#888',
-            weight: 3,
-            opacity: 0.7,
-            fillColor: '#ccc',
-            fillOpacity: 0.2,
-        }
+    // Fit bounds when collection changes
+    useEffect(() => {
+        if (geomObjects.length === 0) return
+        const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry))
+        if (bounds) map.fitBounds(bounds, { padding: [10, 10] })
+    }, [geomObjects, map])
+
+    // Style function
+    function styleFn(geomObj: GeomObject): LL.PathOptions {
+        return geomObj.id === selectedId ? SELECTED_PATH_STYLE : DEFAULT_PATH_STYLE
     }
 
-    const handleFeatureClick = (geomObj: GeomObject) => (_feature: GeoJSON.Feature, layer: LL.Layer) => {
-        layer.on('click', function (_) {
-            if (onSelect) onSelect(geomObj)
+    // Create marker for POINT geometries
+    function createPointMarker(geomObj: GeomObject, latlng: LL.LatLng) {
+        return LL.circleMarker(latlng, {
+            radius: geomObj.id === selectedId ? POINT_RADIUS_SELECTED : POINT_RADIUS,
         })
     }
 
-    return geomObjects.map(geomObj =>
-        <RL.GeoJSON
-            key={geomObj.id}
-            data={geomObj.feature}
-            onEachFeature={handleFeatureClick(geomObj)}
-            style={() => styleFn(geomObj)}
-        />
+    const handleFeatureClick = (geomObj: GeomObject) => (_feature: GeoJSON.Feature, layer: LL.Layer) => {
+        layer.on('click', () => onSelect?.(geomObj))
+    }
+
+    return (
+        <>
+            {geomObjects.map(geomObj => (
+                <RL.GeoJSON
+                    key={geomObj.id}
+                    data={geomObj.feature}
+                    onEachFeature={handleFeatureClick(geomObj)}
+                    style={() => styleFn(geomObj)}
+                    pointToLayer={(_feature, latlng) => createPointMarker(geomObj, latlng)}
+                />
+            ))}
+        </>
     )
 }
 

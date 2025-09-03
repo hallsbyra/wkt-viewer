@@ -1,6 +1,6 @@
 import * as LL from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { MapContainer } from 'react-leaflet'
 import wellknown from 'wellknown'
 import { MsgFromWebview, MsgToWebview, WktToken } from '../../extension/src/public-types'
