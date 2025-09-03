@@ -94,4 +94,14 @@ POLYGON (
         const result = extractWkt(input, 1)
         assert.deepStrictEqual(result, expected)
     })
+
+    test('recovers if a WKT contains illegal characters', () => {
+        const input = `
+            GEOMETRYCOLLECTION(LINESTRING(1 2, this text is illegal, but parser should recover
+            POINT(1 2)
+        `
+        const result = extractWkt(input)
+        assert.equal(result.length, 1)
+        assert.equal(result[0].wkt, 'POINT(1 2)')
+    })
 })

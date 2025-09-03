@@ -1,81 +1,3 @@
-/**
- * Extracts all top-level WKT (Well-Known Text) snippets from an input string.
- * Supports nested geometries (e.g., GEOMETRYCOLLECTION) but does not return inner components.
- * Handles EMPTY geometries.
- * Does not use any third-party libraries and runs in O(n) time.
- *
- * @param input - The string containing one or more WKT snippets.
- * @returns An array of objects: { wkt, start, end } for each parsed WKT.
- */
-/*
-export function extractWkt(input: string, maxTokens: number = Infinity): WktToken[] {
-    const results: WktToken[]  = []
-    const wktTypes = [
-        'GEOMETRYCOLLECTION',
-        'MULTIPOLYGON',
-        'MULTILINESTRING',
-        'MULTIPOINT',
-        'POLYGON',
-        'LINESTRING',
-        'POINT'
-    ]
-    const inputUpper = input.toUpperCase()
-    const len = input.length
-    let pos = 0
-
-    while (pos < len && results.length < maxTokens) {
-        let nearest: { type: string, index: number } | null = null
-        for (const type of wktTypes) {
-            const idx = inputUpper.indexOf(type, pos)
-            if (idx !== -1 && (nearest === null || idx < nearest.index)) {
-                nearest = { type, index: idx }
-            }
-        }
-        if (!nearest) { break }
-
-        const { type, index: startIdx } = nearest
-        let i = startIdx + type.length
-
-        // Skip whitespace
-        while (i < len && /\s/.test(input[i])) { i++ }
-
-        // Handle EMPTY geometries
-        if (inputUpper.substr(i, 5) === 'EMPTY') {
-            results.push({ wkt: input.slice(startIdx, i + 5), start: startIdx, end: i + 5 })
-            pos = i + 5
-            continue
-        }
-
-        // Expect opening parenthesis
-        if (input[i] === '(') {
-            let depth = 0
-            let j = i
-            while (j < len) {
-                if (input[j] === '(') { depth++ }
-                else if (input[j] === ')') {
-                    depth--
-                    if (depth === 0) {
-                        results.push({ wkt: input.slice(startIdx, j + 1), start: startIdx, end: j + 1 })
-                        pos = j + 1
-                        break
-                    }
-                }
-                j++
-            }
-            if (j >= len) {
-                // Unmatched parentheses; abort
-                break
-            }
-        } else {
-            // Not a valid snippet; move forward to avoid infinite loop
-            pos = i
-        }
-    }
-
-    return results
-}
-*/
-
 export type WktToken = {
     wkt: string          // The WKT substring
     start: number         // Start offset (0-based)
@@ -153,11 +75,21 @@ export function extractWkt(
             continue
         }
 
-        /* ---- expect '(' and walk to matching ')' ---- */
-        if (input.charCodeAt(i) !== CC.LParen) continue   // malformed
+        /* ---- expect '(' and walk to matching ')' with recovery ---- */
+        if (input.charCodeAt(i) !== CC.LParen) {
+            // Malformed: no opening paren after keyword, advance one char to recover
+            i = wordStart + 1
+            line = startLine
+            continue
+        }
 
-        const { endIdx, endLine } = findMatchingParenWithLine(input, i, line)
-        if (endIdx === -1) break                          // unmatched → abort
+        const { endIdx, endLine, recoveredAt } = findMatchingParenWithLineRecover(input, i, line)
+        if (endIdx === -1) {
+            // Unmatched or gave up: attempt resync after the point we gave up
+            i = recoveredAt > wordStart ? recoveredAt : (wordStart + 1)
+            if (i >= len) break
+            continue
+        }
 
         out.push({
             wkt: input.slice(wordStart, endIdx + 1),
@@ -175,22 +107,47 @@ export function extractWkt(
 
 /*──── helper that also tracks line number while counting parens ───*/
 
-function findMatchingParenWithLine(str: string, open: number, startLine: number) {
+function findMatchingParenWithLineRecover(str: string, open: number, startLine: number) {
     let depth = 0
     let line = startLine
     const len = str.length
+    let lastCommaOrSpace = open
+    const allowedWords = new Set<string>([...TOP, 'EMPTY'])
 
     for (let j = open; j < len; j++) {
         const ch = str.charCodeAt(j)
-        if (ch === CC.NL) line++
-
+        if (ch === CC.NL) { line++; continue }
+        if (ch === 13 /* CR */) { continue } // ignore CR
         if (ch === CC.LParen) depth++
         else if (ch === CC.RParen) {
             depth--
             if (depth === 0) {
-                return { endIdx: j, endLine: line }
+                return { endIdx: j, endLine: line, recoveredAt: j + 1 }
             }
+        } else if (ch === 44 /* , */ || ch === 32 /* space */) {
+            lastCommaOrSpace = j
+        } else if (ch === 9 /* tab */) {
+            // allow tabs for indentation
+            continue
+        } else if (!isAlpha(ch) && ch !== 46 /* . */ && (ch < 48 || ch > 57) && ch !== 45 /* - */) {
+            // Allow other structural chars like newline already handled, semicolons or stray letters cause recovery
+            return { endIdx: -1, endLine: line, recoveredAt: lastCommaOrSpace + 1 }
+        } else if (isAlpha(ch)) {
+            // Potential word inside geometry content
+            const wordStart = j
+            let k = j + 1
+            while (k < len) {
+                const ck = str.charCodeAt(k)
+                if (!isAlpha(ck)) break
+                k++
+            }
+            const word = str.slice(wordStart, k).toUpperCase()
+            if (!allowedWords.has(word) && depth >= 1) {
+                // Unexpected word inside coordinate section -> recover
+                return { endIdx: -1, endLine: line, recoveredAt: k }
+            }
+            j = k - 1 // continue after the word
         }
     }
-    return { endIdx: -1, endLine: line }   // unmatched
+    return { endIdx: -1, endLine: line, recoveredAt: len }
 }
