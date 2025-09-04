@@ -1,117 +1,87 @@
-import * as assert from 'assert'
-import { getCoords, calculateBoundingBox } from './geojson-util'
+import { describe, expect } from 'vitest'
+import { calculateBoundingBox, getCoords } from './geojson-util'
 
 describe('getCoords', () => {
-    test('handles Point', () => {
-        assert.deepStrictEqual(
-            getCoords({ type: 'Point', coordinates: [1, 2] }),
-            [[1, 2]]
-        )
+    it('handles Point', () => {
+        expect(getCoords({ type: 'Point', coordinates: [1, 2] })).toEqual([[1, 2]])
     })
 
-    test('handles LineString', () => {
-        assert.deepStrictEqual(
-            getCoords({ type: 'LineString', coordinates: [[1, 2], [3, 4]] }),
-            [[1, 2], [3, 4]]
-        )
+    it('handles LineString', () => {
+        expect(getCoords({ type: 'LineString', coordinates: [[1, 2], [3, 4]] })).toEqual([[1, 2], [3, 4]])
     })
 
-    test('handles MultiPoint', () => {
-        assert.deepStrictEqual(
-            getCoords({ type: 'MultiPoint', coordinates: [[5, 6], [7, 8]] }),
-            [[5, 6], [7, 8]]
-        )
+    it('handles MultiPoint', () => {
+        expect(getCoords({ type: 'MultiPoint', coordinates: [[5, 6], [7, 8]] })).toEqual([[5, 6], [7, 8]])
     })
 
-    test('handles Polygon', () => {
-        assert.deepStrictEqual(
-            getCoords({
-                type: 'Polygon',
-                coordinates: [
-                    [[1, 2], [3, 4], [5, 6], [1, 2]], // ring
-                    [[2, 3], [4, 5], [2, 3]] // hole
-                ]
-            }),
-            [[1, 2], [3, 4], [5, 6], [1, 2], [2, 3], [4, 5], [2, 3]]
-        )
+    it('handles Polygon', () => {
+        expect(getCoords({
+            type: 'Polygon',
+            coordinates: [
+                [[1, 2], [3, 4], [5, 6], [1, 2]], // ring
+                [[2, 3], [4, 5], [2, 3]] // hole
+            ]
+        })).toEqual([[1, 2], [3, 4], [5, 6], [1, 2], [2, 3], [4, 5], [2, 3]])
     })
 
-    test('handles MultiLineString', () => {
-        assert.deepStrictEqual(
-            getCoords({
-                type: 'MultiLineString',
-                coordinates: [
-                    [[1, 2], [3, 4]],
-                    [[5, 6], [7, 8]],
-                ]
-            }),
-            [[1, 2], [3, 4], [5, 6], [7, 8]]
-        )
+    it('handles MultiLineString', () => {
+        expect(getCoords({
+            type: 'MultiLineString',
+            coordinates: [
+                [[1, 2], [3, 4]],
+                [[5, 6], [7, 8]],
+            ]
+        })).toEqual([[1, 2], [3, 4], [5, 6], [7, 8]])
     })
 
-    test('handles MultiPolygon', () => {
-        assert.deepStrictEqual(
-            getCoords({
-                type: 'MultiPolygon',
-                coordinates: [
-                    [
-                        [[1, 2], [3, 4], [1, 2]],
-                    ],
-                    [
-                        [[5, 6], [7, 8], [5, 6]],
-                    ],
-                ]
-            }),
-            [[1, 2], [3, 4], [1, 2], [5, 6], [7, 8], [5, 6]]
-        )
+    it('handles MultiPolygon', () => {
+        expect(getCoords({
+            type: 'MultiPolygon',
+            coordinates: [
+                [
+                    [[1, 2], [3, 4], [1, 2]],
+                ],
+                [
+                    [[5, 6], [7, 8], [5, 6]],
+                ],
+            ]
+        })).toEqual([[1, 2], [3, 4], [1, 2], [5, 6], [7, 8], [5, 6]])
     })
 
-    test('handles GeometryCollection', () => {
-        assert.deepStrictEqual(
-            getCoords({
-                type: 'GeometryCollection',
-                geometries: [
-                    { type: 'Point', coordinates: [1, 2] },
-                    { type: 'LineString', coordinates: [[3, 4], [5, 6]] }
-                ]
-            }),
-            [[1, 2], [3, 4], [5, 6]]
-        )
+    it('handles GeometryCollection', () => {
+        expect(getCoords({
+            type: 'GeometryCollection',
+            geometries: [
+                { type: 'Point', coordinates: [1, 2] },
+                { type: 'LineString', coordinates: [[3, 4], [5, 6]] }
+            ]
+        })).toEqual([[1, 2], [3, 4], [5, 6]])
     })
 
-    test('returns [] for unknown type', () => {
-        assert.deepStrictEqual(
-            getCoords({ type: 'FakeType', coordinates: [] } as unknown as GeoJSON.Geometry),
-            []
-        )
+    it('returns [] for unknown type', () => {
+        expect(getCoords({ type: 'FakeType', coordinates: [] } as unknown as GeoJSON.Geometry)).toEqual([])
     })
 })
 
 describe('calculateBoundingBox', () => {
-    test('returns null for empty array', () => {
-        assert.strictEqual(calculateBoundingBox([]), null)
+    it('returns null for empty array', () => {
+        expect(calculateBoundingBox([])).toBeNull()
     })
 
-    test('handles a single point', () => {
-        assert.deepStrictEqual(
-            calculateBoundingBox([{ type: 'Point', coordinates: [3, 7] }]),
-            [[7, 3], [7, 3]]
-        )
+    it('handles a single point', () => {
+        expect(calculateBoundingBox([{ type: 'Point', coordinates: [3, 7] }])).toEqual([[7, 3], [7, 3]])
     })
 
-    test('handles multiple geometries', () => {
+    it('handles multiple geometries', () => {
         const geoms = [
             { type: 'Point' as const, coordinates: [1, 5] },
             { type: 'Point' as const, coordinates: [3, 7] },
             { type: 'Point' as const, coordinates: [2, 4] },
         ]
-        assert.deepStrictEqual(
-            calculateBoundingBox(geoms),
-            [[4, 1], [7, 3]]
-        )
+        expect(calculateBoundingBox(geoms)).toEqual([[4, 1], [7, 3]])
     })
 
-    test('handles polygons', () => {
+    it('handles polygons', () => {
         const geoms = [
             {
                 type: 'Polygon' as const,
@@ -126,13 +96,10 @@ describe('calculateBoundingBox', () => {
                 ],
             },
         ]
-        assert.deepStrictEqual(
-            calculateBoundingBox(geoms),
-            [[-3, -2], [2, 3]]
-        )
+        expect(calculateBoundingBox(geoms)).toEqual([[-3, -2], [2, 3]])
     })
 
-    test('handles GeometryCollection', () => {
+    it('handles GeometryCollection', () => {
         const geoms = [
             {
                 type: 'GeometryCollection' as const,
@@ -142,9 +109,6 @@ describe('calculateBoundingBox', () => {
                 ],
             },
         ]
-        assert.deepStrictEqual(
-            calculateBoundingBox(geoms),
-            [[2, 1], [4, 3]]
-        )
+        expect(calculateBoundingBox(geoms)).toEqual([[2, 1], [4, 3]])
     })
 })

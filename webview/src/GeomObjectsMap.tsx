@@ -1,36 +1,11 @@
 import * as LL from 'leaflet'
+import { useEffect, useMemo } from 'react'
 import * as RL from 'react-leaflet'
 import { GeomObject } from './App'
+import { getDirectionMarkers } from './DirectionMarker'
 import { calculateBoundingBox } from './geojson-util'
-import { useEffect } from 'react'
+import { DEFAULT_PATH_STYLE, POINT_RADIUS, POINT_RADIUS_SELECTED, SELECTED_PATH_STYLE } from './styles'
 
-// ---- Style & Color Constants ----
-const COLOR = {
-    selectedStroke: '#0288d1',
-    selectedFill: '#b3e5fc',
-    defaultStroke: '#555',
-    defaultFill: '#ccc',
-}
-
-const SELECTED_PATH_STYLE: LL.PathOptions = {
-    color: COLOR.selectedStroke,
-    weight: 4,
-    opacity: 1,
-    fillColor: COLOR.selectedFill,
-    fillOpacity: 0.6,
-}
-
-const DEFAULT_PATH_STYLE: LL.PathOptions = {
-    color: COLOR.defaultStroke,
-    weight: 2,
-    opacity: 0.8,
-    fillColor: COLOR.defaultFill,
-    fillOpacity: 0.25,
-}
-
-const POINT_RADIUS = 6
-const POINT_RADIUS_SELECTED = 7
-// ---- End constants ----
 
 export function GeomObjectsMap({
     geomObjects,
@@ -66,6 +41,13 @@ export function GeomObjectsMap({
         layer.on('click', () => onSelect?.(geomObj))
     }
 
+    const directionMarkers = useMemo(() => {
+        if (selectedId == null) return []
+        const sel = geomObjects.find(g => g.id === selectedId)
+        if (!sel) return []
+        return getDirectionMarkers(sel.feature.geometry)
+    }, [selectedId, geomObjects])
+
     return (
         <>
             {geomObjects.map(geomObj => (
@@ -77,8 +59,7 @@ export function GeomObjectsMap({
                     pointToLayer={(_feature, latlng) => createPointMarker(geomObj, latlng)}
                 />
             ))}
+            {directionMarkers}
         </>
     )
 }
-
-
