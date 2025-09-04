@@ -4,6 +4,13 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.2.1](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.0...v0.2.1) (2025-09-04)
+
+
+### 🐛 Bug Fixes
+
+* Direction markers are wrong in production build. ([89e0f22](https://github.com/hallsbyra/wkt-viewer/commit/89e0f22ff4a14b8df981c03007b62b5dbf46169e))
+
 ## [0.2.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.1.2...v0.2.0) (2025-09-04)
 
 
