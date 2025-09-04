@@ -4,6 +4,13 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.2.2](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.1...v0.2.2) (2025-09-04)
+
+
+### 🐛 Bug Fixes
+
+* Handle EMPTY geometries ([765a67d](https://github.com/hallsbyra/wkt-viewer/commit/765a67d274942fce6837f45271d2e74a4acadcdb))
+
 ## [0.2.1](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.0...v0.2.1) (2025-09-04)
 
 
