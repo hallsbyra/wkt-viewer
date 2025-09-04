@@ -1,8 +1,9 @@
+import { wktToGeoJSON } from '@terraformer/wkt'
 import * as LL from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useCallback, useEffect, useState } from 'react'
 import { MapContainer } from 'react-leaflet'
-import wellknown from 'wellknown'
+import { WebviewApi } from 'vscode-webview'
 import { MsgFromWebview, MsgToWebview, WktToken } from '../../extension/src/public-types'
 import { GeomObjectsList } from './GeomObjectsList'
 import { GeomObjectsMap } from './GeomObjectsMap'
@@ -14,21 +15,22 @@ export type GeomObject = {
     feature: GeoJSON.Feature
 }
 
-const vscode = acquireVsCodeApi()
+let vsCodeApi: WebviewApi<unknown> | null = null
+const getVsCodeApi = () => (vsCodeApi ??= acquireVsCodeApi())
 
 function postMsgToVscode(msg: MsgFromWebview) {
     console.log('Posting message to VSCode:', msg)
-    vscode.postMessage(msg)
+    getVsCodeApi().postMessage(msg)
 }
 
-function wktTokensToGeomObjects(wktTokens: WktToken[]): GeomObject[] {
+export function wktTokensToGeomObjects(wktTokens: WktToken[]): GeomObject[] {
     return wktTokens.map(wktToken => {
-        const geojson = wellknown.parse(wktToken.wkt)
+        const geojson = wktToGeoJSON(wktToken.wkt)
         if (!geojson) throw new Error('Invalid WKT: ' + wktToken.wkt)
         return {
             id: wktToken.start,
             token: wktToken,
-            feature: { type: 'Feature', geometry: geojson, properties: {} },
+            feature: { type: 'Feature', geometry: geojson as GeoJSON.Geometry, properties: {} },
         }
     })
 }

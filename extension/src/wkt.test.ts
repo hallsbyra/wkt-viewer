@@ -79,7 +79,6 @@ POLYGON (
         assert.deepStrictEqual(result, expected)
     })
 
-
     test('malformed WKT', () => {
         const input = `
         GEOMETRYCOLLECTION (LINESTRING (19.3 9.85, 20.25 10.2, 21.1 10.9, 21.9 11.6, 22.7 12.3, 23.5 13, 24.4 13.7, 25.45 14.6, 26.3 15.3, 27.05 16, 28 16.7, 28.8 17.4, 29.55 18.1, 30.3 18.8, 31.2 19.65, 32.35 20.7, 33.1 21.4, 34.25 22.45, 35.1 23.3, 36.1 24.2, 37 25.1, 38.4 26.3, 39.25 27.1, 40.3 28, 41.4 29, 42.55 30, 43.8 31, 44.8 31.85, 45.6 32.5, 46.45 33.25, 47.2 34, 14.6 32.8), 
@@ -103,5 +102,17 @@ POLYGON (
         const result = extractWkt(input)
         assert.equal(result.length, 1)
         assert.equal(result[0].wkt, 'POINT(1 2)')
+    })
+
+    test('handles EMPTY geometries', () => {
+        const input = `
+            POINT(1 1)
+            LINESTRING EMPTY
+            POINT(2 2)
+        `
+        const result = extractWkt(input)
+        assert.equal(result[0].wkt, 'POINT(1 1)')
+        assert.equal(result[1].wkt, 'LINESTRING EMPTY')
+        assert.equal(result[2].wkt, 'POINT(2 2)')
     })
 })
