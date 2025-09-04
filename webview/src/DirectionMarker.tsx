@@ -11,8 +11,10 @@ const ARROW_COLOR = COLOR.selectedStroke
 export function DirectionMarker({ latlng, angleDeg }: { latlng: [number, number], angleDeg: number }) {
     // Base triangle points right (→). Adjust rotation directly via CSS.
     const cssAngle = -angleDeg // clockwise for screen coords
-    // Chevron made of two lines meeting at the point (no fill)
-    const html = `<svg width="${ARROW_SIZE_PX}" height="${ARROW_SIZE_PX}" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${cssAngle}deg);transform-origin:50% 50%;"><path d="M2 2 L18 10 M2 18 L18 10" stroke="${ARROW_COLOR}" stroke-width="2.2" stroke-linecap="round" fill="none" /></svg>`
+    // NOTE: In production webview we have a restrictive CSP without 'unsafe-inline' for styles.
+    // Using a style attribute for transform was blocked, causing all arrows to point right.
+    // Switch to an SVG <g transform="rotate(...)" attribute (not considered inline CSS) so it works under CSP.
+    const html = `<svg width="${ARROW_SIZE_PX}" height="${ARROW_SIZE_PX}" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(${cssAngle} 10 10)"><path d="M2 2 L18 10 M2 18 L18 10" stroke="${ARROW_COLOR}" stroke-width="2.2" stroke-linecap="round" fill="none" /></g></svg>`
     const icon = LL.divIcon({ html, className: 'wkt-arrow', iconSize: [ARROW_SIZE_PX, ARROW_SIZE_PX], iconAnchor: [ARROW_SIZE_PX / 2, ARROW_SIZE_PX / 2] })
     return <RL.Marker position={latlng} icon={icon} />
 }
