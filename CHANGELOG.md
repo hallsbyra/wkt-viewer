@@ -4,6 +4,18 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.2](https://github.com/hallsbyra/wkt-viewer/compare/v0.1.1...v0.1.2) (2025-09-03)
+
+
+### 🐛 Bug Fixes
+
+* Improve error recovery when input contains malformed WKT ([22ce7e6](https://github.com/hallsbyra/wkt-viewer/commit/22ce7e643fc69a14bae605f41c71564eb6c8767f))
+
+
+### ⬆️ Dependency updates
+
+* Update ([30d3b50](https://github.com/hallsbyra/wkt-viewer/commit/30d3b50e8f78b0651d690bb9f3f1a90894608117))
+
 ## [0.1.1](https://github.com/hallsbyra/wkt-viewer/compare/v0.1.0...v0.1.1) (2025-09-03)
 
 
