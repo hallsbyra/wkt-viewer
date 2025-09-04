@@ -4,6 +4,13 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.2.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.1.2...v0.2.0) (2025-09-04)
+
+
+### ✨ Features
+
+* Show direction arrows. [#9](https://github.com/hallsbyra/wkt-viewer/issues/9) ([a38bd75](https://github.com/hallsbyra/wkt-viewer/commit/a38bd75b7d75d34fba2b73fcad8cce6d9bd35e27))
+
 ## [0.1.2](https://github.com/hallsbyra/wkt-viewer/compare/v0.1.1...v0.1.2) (2025-09-03)
 
 
