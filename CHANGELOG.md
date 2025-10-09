@@ -4,6 +4,18 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.2.3](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.2...v0.2.3) (2025-10-09)
+
+
+### 🐛 Bug Fixes
+
+* Don't reset map zoom when selecting in text file. ([95d3863](https://github.com/hallsbyra/wkt-viewer/commit/95d38635cc0b17f599f2253a2c58b68c62c52321))
+
+
+### ⬆️ Dependency updates
+
+* Update ([b266409](https://github.com/hallsbyra/wkt-viewer/commit/b266409d6be61d933f36b2a15214bef1bebdad07))
+
 ## [0.2.2](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.1...v0.2.2) (2025-09-04)
 
 
