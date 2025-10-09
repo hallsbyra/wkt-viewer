@@ -15,7 +15,7 @@
     "type": "git",
     "url": "https://github.com/hallsbyra/wkt-viewer"
   },
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "halls-byra",
   "engines": {
     "vscode": "^1.99.0"
