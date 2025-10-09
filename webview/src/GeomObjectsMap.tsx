@@ -17,13 +17,17 @@ export function GeomObjectsMap({
     onSelect?: (obj: GeomObject) => void
 }) {
     const map = RL.useMap()
+    // Compute overall bounds and a stable key so we can detect real changes.
+    const { bounds, boundsKey } = useMemo(() => {
+        const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry)) ?? [[0,0], [1,1]]
+        const boundsKey = `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`
+        return { bounds, boundsKey }
+    }, [geomObjects])
 
-    // Fit bounds when collection changes
+    // Fit bounds when the overall bounds change (initial load or content update)
     useEffect(() => {
-        if (geomObjects.length === 0) return
-        const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry))
-        if (bounds) map.fitBounds(bounds, { padding: [10, 10] })
-    }, [geomObjects, map])
+        map.fitBounds(bounds, { padding: [10, 10] })
+    }, [boundsKey, map])
 
     // Style function
     function styleFn(geomObj: GeomObject): LL.PathOptions {
