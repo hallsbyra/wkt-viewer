@@ -4,6 +4,18 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.2.4](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.3...v0.2.4) (2025-10-17)
+
+
+### 🐛 Bug Fixes
+
+* Add direction arrows for geometry collections ([#14](https://github.com/hallsbyra/wkt-viewer/issues/14)) ([5a7b3ef](https://github.com/hallsbyra/wkt-viewer/commit/5a7b3ef5575a949bc7462998d637a671f007d71b))
+
+
+### ⬆️ Dependency updates
+
+* Update ([005ad08](https://github.com/hallsbyra/wkt-viewer/commit/005ad08a168d6ff8c822346fc0718daf527cc268))
+
 ## [0.2.3](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.2...v0.2.3) (2025-10-09)
 
 
