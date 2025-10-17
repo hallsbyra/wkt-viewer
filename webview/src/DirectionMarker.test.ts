@@ -87,4 +87,26 @@ describe('getDirectionMarkerInfo', () => {
         expect(info[0].pos).toEqual([0.5, 0])
         expect(info[0].angleDeg).toBe(0)
     })
+
+    it('GeometryCollection recurses into nested geometries', () => {
+        const geom: GeoJSON.GeometryCollection = {
+            type: 'GeometryCollection',
+            geometries: [
+                { type: 'LineString', coordinates: [[0, 0], [2, 0]] },
+                { type: 'Polygon', coordinates: [[[10, 10], [12, 10], [12, 12], [10, 10]]] },
+                {
+                    type: 'GeometryCollection',
+                    geometries: [
+                        { type: 'MultiLineString', coordinates: [[[20, 20], [21, 20], [21, 21]], [[30, 30], [30, 31]]] }
+                    ]
+                }
+            ]
+        }
+        const info = sut(geom)
+        expect(info).toHaveLength(7)
+        expect(info).toContainEqual({ pos: [1, 0], angleDeg: 0 })
+        expect(info).toContainEqual({ pos: [11, 10], angleDeg: 0 })
+        expect(info).toContainEqual({ pos: [20.5, 20], angleDeg: 0 })
+        expect(info).toContainEqual({ pos: [30, 30.5], angleDeg: 90 })
+    })
 })

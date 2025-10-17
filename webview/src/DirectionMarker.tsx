@@ -26,8 +26,6 @@ type DirectionMarkerInfo = { pos: Pos, angleDeg: number }
  * Calculate positions and angles for direction markers along a geometry.
  */
 export function getDirectionMarkerInfo(geom: GeoJSON.Geometry): DirectionMarkerInfo[] {
-    if (!['LineString', 'MultiLineString', 'Polygon', 'MultiPolygon'].includes(geom.type)) return []
-
     const result: DirectionMarkerInfo[] = []
     const addSegmentArrow = (a: GeoJSON.Position, b: GeoJSON.Position) => {
         const dx = b[0] - a[0]
@@ -45,16 +43,21 @@ export function getDirectionMarkerInfo(geom: GeoJSON.Geometry): DirectionMarkerI
             addSegmentArrow(coords[i], coords[i + 1])
         }
     }
-    if (geom.type === 'LineString') {
-        addForLine((geom as GeoJSON.LineString).coordinates)
-    } else if (geom.type === 'MultiLineString') {
-        for (const ls of (geom as GeoJSON.MultiLineString).coordinates) addForLine(ls)
-    } else if (geom.type === 'Polygon') {
-        for (const ring of (geom as GeoJSON.Polygon).coordinates) addForLine(ring)
-    } else if (geom.type === 'MultiPolygon') {
-        for (const poly of (geom as GeoJSON.MultiPolygon).coordinates)
-            for (const ring of poly) addForLine(ring)
+    const addForGeometry = (geometry: GeoJSON.Geometry) => {
+        if (geometry.type === 'LineString') {
+            addForLine(geometry.coordinates)
+        } else if (geometry.type === 'MultiLineString') {
+            for (const ls of geometry.coordinates) addForLine(ls)
+        } else if (geometry.type === 'Polygon') {
+            for (const ring of geometry.coordinates) addForLine(ring)
+        } else if (geometry.type === 'MultiPolygon') {
+            for (const poly of geometry.coordinates)
+                for (const ring of poly) addForLine(ring)
+        } else if (geometry.type === 'GeometryCollection') {
+            for (const child of geometry.geometries) addForGeometry(child)
+        }
     }
+    addForGeometry(geom)
     return result
 }
 
