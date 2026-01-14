@@ -4,6 +4,13 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.3.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.4...v0.3.0) (2026-01-14)
+
+
+### ✨ Features
+
+* Enable middle mouse panning. ([4fdddba](https://github.com/hallsbyra/wkt-viewer/commit/4fdddba39c1e17ac343b6516dd852fd6a808f478))
+
 ## [0.2.4](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.3...v0.2.4) (2025-10-17)
 
 
