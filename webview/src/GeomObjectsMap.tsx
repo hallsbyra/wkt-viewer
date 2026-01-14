@@ -6,7 +6,6 @@ import { getDirectionMarkers } from './DirectionMarker'
 import { calculateBoundingBox } from './geojson-util'
 import { DEFAULT_PATH_STYLE, POINT_RADIUS, POINT_RADIUS_SELECTED, SELECTED_PATH_STYLE } from './styles'
 
-
 export function GeomObjectsMap({
     geomObjects,
     selectedId,
@@ -52,6 +51,8 @@ export function GeomObjectsMap({
         return getDirectionMarkers(sel.feature.geometry)
     }, [selectedId, geomObjects])
 
+    useMiddleButtonPanning(map)
+
     return (
         <>
             {geomObjects.map(geomObj => (
@@ -66,4 +67,54 @@ export function GeomObjectsMap({
             {directionMarkers}
         </>
     )
+}
+
+// Allow middle-button drag panning without changing Leaflet's default drag behavior.
+function useMiddleButtonPanning(map: LL.Map) {
+    useEffect(() => {
+        const container = map.getContainer()
+        if (!container) return
+
+        let isMiddlePanning = false
+        let lastPosition: { x: number, y: number } | null = null
+
+        const stopPanning = () => {
+            if (!isMiddlePanning) return
+            isMiddlePanning = false
+            lastPosition = null
+            window.removeEventListener('mousemove', handleMouseMove)
+            window.removeEventListener('mouseup', stopPanning)
+        }
+
+        const handleMouseMove = (event: MouseEvent) => {
+            if (!isMiddlePanning || !lastPosition) return
+            // If the middle button is released while moving, stop panning.
+            if ((event.buttons ?? 0) && (event.buttons & 4) === 0) {
+                stopPanning()
+                return
+            }
+
+            const dx = event.clientX - lastPosition.x
+            const dy = event.clientY - lastPosition.y
+            lastPosition = { x: event.clientX, y: event.clientY }
+            map.panBy([-dx, -dy], { animate: false })
+        }
+
+        const handleMouseDown = (event: MouseEvent) => {
+            if (event.button !== 1) return
+            event.preventDefault()
+            isMiddlePanning = true
+            lastPosition = { x: event.clientX, y: event.clientY }
+            window.addEventListener('mousemove', handleMouseMove)
+            window.addEventListener('mouseup', stopPanning)
+        }
+
+        container.addEventListener('mousedown', handleMouseDown)
+
+        return () => {
+            container.removeEventListener('mousedown', handleMouseDown)
+            window.removeEventListener('mousemove', handleMouseMove)
+            window.removeEventListener('mouseup', stopPanning)
+        }
+    }, [map])
 }
