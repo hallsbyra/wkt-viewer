@@ -47,7 +47,9 @@
     "vscode:prepublish": "npm run clean && npm run build",
     "watch": "tsc --build --watch",
     "package": "vsce package",
-    "test": "npm run test --workspaces"
+    "test": "npm run test:extension && npm run test:webview",
+    "test:extension": "npm run build -w extension && vscode-test --fail-zero",
+    "test:webview": "npm run test -w webview"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

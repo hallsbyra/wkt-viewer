@@ -1,15 +1,27 @@
 import * as assert from 'assert'
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
 import * as vscode from 'vscode'
-// import * as myExtension from '../../extension';
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.')
+suite('WKT Viewer extension', () => {
+	teardown(async () => {
+		await vscode.commands.executeCommand('workbench.action.closeAllEditors')
+	})
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5))
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0))
+	test('loads from the root extension manifest', async () => {
+		const extension = vscode.extensions.getExtension('halls-byra.wkt-viewer')
+
+		assert.ok(extension, 'Expected VS Code to load the root WKT Viewer extension')
+		assert.strictEqual(extension.packageJSON.main, './extension/dist/extension.js')
+		assert.deepStrictEqual(extension.packageJSON.engines, { vscode: '^1.99.0' })
+	})
+
+	test('registers and runs the Start WKT Viewer command', async () => {
+		const extension = vscode.extensions.getExtension('halls-byra.wkt-viewer')
+		assert.ok(extension, 'Expected VS Code to load the root WKT Viewer extension')
+
+		await extension.activate()
+		const commands = await vscode.commands.getCommands(true)
+
+		assert.ok(commands.includes('wktViewer.start'), 'Expected wktViewer.start to be registered')
+		await vscode.commands.executeCommand('wktViewer.start')
 	})
 })

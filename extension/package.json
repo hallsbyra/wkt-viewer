@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "tsc -p ./",
-    "test": "vscode-test"
+    "test": "npm --prefix .. run test:extension"
   },
   "devDependencies": {
     "@types/node": "^24.8.1",
