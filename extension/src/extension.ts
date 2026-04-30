@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 import { extractWkt } from './wkt.js'
-import * as path from 'path'
 import { MsgFromWebview, MsgToWebview } from './public-types.js'
 
 const MAX_WKTS = 500
@@ -56,7 +55,10 @@ export function activate(context: vscode.ExtensionContext) {
             if (isDevelopment) {
                 currentPanel.webview.html = getDevWebviewContent()
             } else {
-                currentPanel.webview.html = getProdWebviewContent(currentPanel.webview.cspSource, currentPanel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'webview', 'dist'))).toString())
+                const webviewDistUri = vscode.Uri.joinPath(context.extensionUri, 'webview', 'dist')
+                const styleUri = currentPanel.webview.asWebviewUri(vscode.Uri.joinPath(webviewDistUri, 'assets', 'index.css')).toString()
+                const scriptUri = currentPanel.webview.asWebviewUri(vscode.Uri.joinPath(webviewDistUri, 'assets', 'index.js')).toString()
+                currentPanel.webview.html = getProdWebviewContent(currentPanel.webview.cspSource, styleUri, scriptUri)
             }
 
             // Handle messages from the webview
@@ -111,7 +113,7 @@ function getDevWebviewContent(): string {
     `
 }
 
-function getProdWebviewContent(csp: string, uriBase: string): string {
+export function getProdWebviewContent(cspSource: string, styleUri: string, scriptUri: string): string {
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -120,14 +122,14 @@ function getProdWebviewContent(csp: string, uriBase: string): string {
         <meta 
             http-equiv="Content-Security-Policy" 
             content="default-src 'none';
-                     script-src 'self' vscode-resource:;
-                     style-src 'self' vscode-resource:;
-                     img-src 'self' vscode-resource:;">
-        <link rel="stylesheet" type="text/css" href="${uriBase}/assets/index.css">                     
+                     script-src ${cspSource};
+                     style-src ${cspSource} 'unsafe-inline';
+                     img-src ${cspSource} data: https:;">
+        <link rel="stylesheet" type="text/css" href="${styleUri}">                     
       </head>
       <body>
         <div id="root"></div>
-        <script type="module" src="${uriBase}/assets/index.js"></script>
+        <script type="module" src="${scriptUri}"></script>
       </body>
       </html>
     `
