@@ -1,6 +1,32 @@
-import { describe, it, expect } from 'vitest'
+import { act } from 'react'
+import { createRoot } from 'react-dom/client'
+import { describe, it, expect, vi } from 'vitest'
 import { WktToken } from '../../extension/src/wkt'
-import { wktTokensToGeomObjects } from './App'
+import App, { wktTokensToGeomObjects } from './App'
+
+const testGlobal = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+testGlobal.IS_REACT_ACT_ENVIRONMENT = true
+
+const reactLeafletMock = vi.hoisted(() => ({
+    mapContainerProps: [] as Array<Record<string, unknown>>,
+}))
+
+vi.mock('react-leaflet', async () => {
+    const React = await vi.importActual<typeof import('react')>('react')
+    return {
+        MapContainer: (props: Record<string, unknown> & { children?: React.ReactNode }) => {
+            reactLeafletMock.mapContainerProps.push(props)
+            return React.createElement('div', null, props.children)
+        },
+        GeoJSON: () => null,
+        Marker: () => null,
+        useMap: () => ({
+            fitBounds: () => undefined,
+            getContainer: () => document.createElement('div'),
+            panBy: () => undefined,
+        }),
+    }
+})
 
 describe('wktTokensToGeomObjects', () => {
     const tokens: WktToken[] = [
@@ -31,5 +57,25 @@ describe('wktTokensToGeomObjects', () => {
     it('parses EMPTY LineString geometry', () => {
         expect(geomObjects[2].feature.geometry.type).toBe('LineString')
         expect((geomObjects[2].feature.geometry as GeoJSON.LineString).coordinates).toEqual([])
+    })
+})
+
+describe('App map configuration', () => {
+    it('allows negative zoom so tall CRS.Simple coordinate ranges can fit in view', () => {
+        const host = document.createElement('div')
+        document.body.appendChild(host)
+        const root = createRoot(host)
+
+        act(() => {
+            root.render(<App />)
+        })
+
+        const latestMapContainerProps = reactLeafletMock.mapContainerProps[reactLeafletMock.mapContainerProps.length - 1]
+        expect(latestMapContainerProps.minZoom).toBeLessThan(0)
+
+        act(() => {
+            root.unmount()
+        })
+        host.remove()
     })
 })

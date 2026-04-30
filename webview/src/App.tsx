@@ -15,6 +15,8 @@ export type GeomObject = {
     feature: GeoJSON.Feature
 }
 
+const MAP_MIN_ZOOM = -10
+
 let vsCodeApi: WebviewApi<unknown> | null = null
 const getVsCodeApi = () => (vsCodeApi ??= acquireVsCodeApi())
 
@@ -105,6 +107,7 @@ export default function App() {
                 <MapContainer
                     crs={LL.CRS.Simple}
                     style={{ height: '100%', width: '100%' }}
+                    minZoom={MAP_MIN_ZOOM}
                     maxBounds={[[-Infinity, -Infinity], [Infinity, Infinity]]}
                 >
                     <GeomObjectsMap
