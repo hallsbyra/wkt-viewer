@@ -32,10 +32,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "wkt-viewer.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "wktViewer.start",
         "title": "Start WKT Viewer"
       }
