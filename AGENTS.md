@@ -35,11 +35,6 @@ Keep `.vscodeignore` strict. Tests, source maps, TypeScript sources, workspace i
 
 ## Commits
 
-Use Conventional Commits:
+Follow the commit policy in [README.md](./README.md#contributing).
 
-- `feat:` for features
-- `fix:` for bug fixes
-- `docs:` for documentation
-- `test:` for tests
-- `refactor:` for internal restructuring
-- `build:` or `ci:` for build and workflow changes
+Use `build:` for build, CI, packaging, and workflow changes. Do not use `ci:` in this repository.

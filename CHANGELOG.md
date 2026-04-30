@@ -19,7 +19,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 * Add direction arrows for geometry collections ([#14](https://github.com/hallsbyra/wkt-viewer/issues/14)) ([5a7b3ef](https://github.com/hallsbyra/wkt-viewer/commit/5a7b3ef5575a949bc7462998d637a671f007d71b))
 
 
-### ⬆️ Dependency updates
+### ⬆️ Dependency Updates
 
 * Update ([005ad08](https://github.com/hallsbyra/wkt-viewer/commit/005ad08a168d6ff8c822346fc0718daf527cc268))
 
@@ -31,7 +31,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 * Don't reset map zoom when selecting in text file. ([95d3863](https://github.com/hallsbyra/wkt-viewer/commit/95d38635cc0b17f599f2253a2c58b68c62c52321))
 
 
-### ⬆️ Dependency updates
+### ⬆️ Dependency Updates
 
 * Update ([b266409](https://github.com/hallsbyra/wkt-viewer/commit/b266409d6be61d933f36b2a15214bef1bebdad07))
 
@@ -64,7 +64,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 * Improve error recovery when input contains malformed WKT ([22ce7e6](https://github.com/hallsbyra/wkt-viewer/commit/22ce7e643fc69a14bae605f41c71564eb6c8767f))
 
 
-### ⬆️ Dependency updates
+### ⬆️ Dependency Updates
 
 * Update ([30d3b50](https://github.com/hallsbyra/wkt-viewer/commit/30d3b50e8f78b0651d690bb9f3f1a90894608117))
 

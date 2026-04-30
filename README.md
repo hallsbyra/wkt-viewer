@@ -44,7 +44,18 @@ npm test
 
 ## Contributing
 
-We use [Release Please](https://github.com/googleapis/release-please), so commits should follow [Conventional Commits](https://www.conventionalcommits.org/). Use `feat:` for features and `fix:` for bug fixes.
+We use [Release Please](https://github.com/googleapis/release-please), so commit messages should follow [Conventional Commits](https://www.conventionalcommits.org/). Release Please reads commits on `main`, so squash commit titles must follow this format too.
+
+Use these types:
+
+- `feat:` user-visible features. Shown in the changelog and bumps the minor version.
+- `fix:` user-visible bug fixes. Shown in the changelog and bumps the patch version.
+- `deps:` dependency updates worth mentioning. Shown in the changelog.
+- `docs:`, `test:`, `refactor:`, `build:`, `chore:` internal changes. Hidden from the changelog.
+
+Use `build:` for build, CI, packaging, and workflow changes. Do not use `ci:` in this repository.
+
+For breaking changes, use `!` after the type or scope, or add a `BREAKING CHANGE:` footer.
 
 Before publishing, verify a VSIX:
 
