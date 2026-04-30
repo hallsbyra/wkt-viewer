@@ -8,6 +8,7 @@
 **/eslint.config.mjs
 **/tsconfig.json
 extension/src/**
+shared/**
 **/node_modules
 
 # Ignore everything in webview/

@@ -25,6 +25,7 @@
   ],
   "main": "./extension/dist/extension.js",
   "workspaces": [
+    "shared",
     "extension",
     "webview"
   ],

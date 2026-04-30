@@ -1,7 +1,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, it, expect, vi } from 'vitest'
-import { WktToken } from '../../extension/src/wkt'
+import { type WktToken } from '@wkt-viewer/shared'
 import App, { wktTokensToGeomObjects } from './App'
 
 const testGlobal = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }

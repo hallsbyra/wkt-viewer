@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
+import { type MsgFromWebview, type MsgToWebview } from '@wkt-viewer/shared'
 import { extractWkt } from './wkt.js'
-import { MsgFromWebview, MsgToWebview } from './public-types.js'
 
 const MAX_WKTS = 500
 

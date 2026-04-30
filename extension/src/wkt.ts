@@ -1,10 +1,6 @@
-export type WktToken = {
-    wkt: string          // The WKT substring
-    start: number         // Start offset (0-based)
-    end: number         // End offset   (0-based, exclusive)
-    line: number         // 0-based line number where the WKT starts
-    endLine: number      // 0-based line where it ends  (optional)
-}
+import { type WktToken } from '@wkt-viewer/shared'
+
+export type { WktToken } from '@wkt-viewer/shared'
 
 /*──────────────────────────── helpers ────────────────────────────*/
 
