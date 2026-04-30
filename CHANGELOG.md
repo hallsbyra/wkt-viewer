@@ -4,6 +4,15 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.3.1](https://github.com/hallsbyra/wkt-viewer/compare/v0.3.0...v0.3.1) (2026-04-30)
+
+
+### 🐛 Bug Fixes
+
+* allow zooming out to fit large WKT extents ([5b55b5b](https://github.com/hallsbyra/wkt-viewer/commit/5b55b5bed9b7c373f8c81ebbf48317f91f677d18))
+* load current document when webview opens ([35f4777](https://github.com/hallsbyra/wkt-viewer/commit/35f477743cd9556d9fb5093278b8a1d7a99e561d))
+* use vscode webview csp source ([4fbc5a9](https://github.com/hallsbyra/wkt-viewer/commit/4fbc5a9537f5d1e0a357dca85c83c663c7ba4786))
+
 ## [0.3.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.2.4...v0.3.0) (2026-01-14)
 
 
