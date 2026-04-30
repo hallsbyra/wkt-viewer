@@ -8,8 +8,8 @@
     "test": "npm --prefix .. run test:extension"
   },
   "devDependencies": {
-    "@wkt-viewer/shared": "0.0.0",
-    "@types/node": "^24.8.1",
-    "@types/vscode": "^1.105.0"
+    "@types/node": "^25.6.0",
+    "@types/vscode": "^1.118.0",
+    "@wkt-viewer/shared": "0.0.0"
   }
 }

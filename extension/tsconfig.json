@@ -12,7 +12,11 @@
 		"sourceMap": true,
 		"rootDir": "src",
 		"skipLibCheck": true,
-		"strict": true, 
+		"strict": true,
+		"types": [
+			"node",
+			"mocha"
+		],
 	},
 	"include": [
 		"src/**/*.ts"
