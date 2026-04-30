@@ -4,6 +4,13 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.4.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.3.1...v0.4.0) (2026-04-30)
+
+
+### ✨ Features
+
+* add max geometries setting ([bbe4804](https://github.com/hallsbyra/wkt-viewer/commit/bbe48042442235ada562f85964d1b186a36fdb3b))
+
 ## [0.3.1](https://github.com/hallsbyra/wkt-viewer/compare/v0.3.0...v0.3.1) (2026-04-30)
 
 
