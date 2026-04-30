@@ -35,7 +35,18 @@
         "command": "wktViewer.start",
         "title": "Start WKT Viewer"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "WKT Viewer",
+      "properties": {
+        "wktViewer.maxGeometries": {
+          "type": "integer",
+          "default": 500,
+          "minimum": 1,
+          "markdownDescription": "Maximum number of WKT geometries to parse and show from the active document."
+        }
+      }
+    }
   },
   "scripts": {
     "build": "npm run build --workspaces && npm run lint",

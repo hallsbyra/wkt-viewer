@@ -2,7 +2,9 @@ import * as vscode from 'vscode'
 import { type MsgFromWebview, type MsgToWebview } from '@wkt-viewer/shared'
 import { extractWkt } from './wkt.js'
 
-const MAX_WKTS = 500
+export const DEFAULT_MAX_GEOMETRIES = 500
+const SETTINGS_SECTION = 'wktViewer'
+const MAX_GEOMETRIES_SETTING = 'maxGeometries'
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Activating WKT Viewer extension')
@@ -28,6 +30,16 @@ export function activate(context: vscode.ExtensionContext) {
             const start = event.textEditor.document.offsetAt(selection.start)
             const end = event.textEditor.document.offsetAt(selection.end)
             postMessageToWebview(currentPanel, { command: 'select', start, end, line: selection.start.line })
+        }
+    })
+
+    vscode.workspace.onDidChangeConfiguration(event => {
+        if (currentPanel && event.affectsConfiguration(`${SETTINGS_SECTION}.${MAX_GEOMETRIES_SETTING}`)) {
+            const editor = lastTextEditor ?? vscode.window.activeTextEditor
+            if (editor) {
+                lastTextEditor = editor
+                postAllWkt(currentPanel, editor.document)
+            }
         }
     })
 
@@ -150,8 +162,21 @@ export function deactivate() { }
 
 function postAllWkt(panel: vscode.WebviewPanel, document: vscode.TextDocument) {
     const allText = document.getText()
-    const wktArr = extractWkt(allText, MAX_WKTS)
+    const wktArr = extractWkt(allText, getMaxGeometries())
     postMessageToWebview(panel, { command: 'update', wkt: wktArr })
+}
+
+function getMaxGeometries(): number {
+    const configured = vscode.workspace.getConfiguration(SETTINGS_SECTION).get<number>(MAX_GEOMETRIES_SETTING)
+    return normalizeMaxGeometries(configured)
+}
+
+export function normalizeMaxGeometries(value: unknown): number {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 1) {
+        return DEFAULT_MAX_GEOMETRIES
+    }
+
+    return Math.floor(value)
 }
 
 function selectTextInEditor(editor: vscode.TextEditor | undefined, start: number, end: number) {

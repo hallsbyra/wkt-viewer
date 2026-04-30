@@ -20,7 +20,7 @@ Visualize and navigate files containing WKT (Well Known Text) geometries in Visu
 
 ## Extension Settings
 
-None yet.
+- `wktViewer.maxGeometries`: Maximum number of WKT geometries to parse and show from the active document. Defaults to `500`.
 
 ## Development
 
