@@ -68,6 +68,7 @@ export default function App() {
             }
         }
         window.addEventListener('message', onMessage)
+        postMsgToVscode({ command: 'ready' })
         return () => window.removeEventListener('message', onMessage)
     }, [])
 

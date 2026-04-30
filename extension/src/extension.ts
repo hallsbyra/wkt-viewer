@@ -36,7 +36,12 @@ export function activate(context: vscode.ExtensionContext) {
         if (currentPanel) {
             currentPanel.reveal(currentPanel.viewColumn ?? vscode.ViewColumn.Beside)
         } else {
-            const activeCol = vscode.window.activeTextEditor?.viewColumn
+            const activeTextEditor = vscode.window.activeTextEditor
+            if (activeTextEditor) {
+                lastTextEditor = activeTextEditor
+            }
+
+            const activeCol = activeTextEditor?.viewColumn
             const targetCol = activeCol !== undefined ? activeCol + 1 : vscode.ViewColumn.Beside
             currentPanel = vscode.window.createWebviewPanel(
                 'wktViewer',
@@ -67,8 +72,14 @@ export function activate(context: vscode.ExtensionContext) {
                     console.log('Webview message received', message)
                     if (message.command === 'select') {
                         selectTextInEditor(lastTextEditor, message.start, message.end)
+                    } else if (message.command === 'ready') {
+                        const editor = lastTextEditor ?? vscode.window.activeTextEditor
+                        if (editor && currentPanel) {
+                            lastTextEditor = editor
+                            postAllWkt(currentPanel, editor.document)
+                        }
                     } else {
-                        console.warn(`Unknown message command: ${message.command}`)
+                        console.warn('Unknown message received from webview', message)
                     }
                 },
                 undefined,

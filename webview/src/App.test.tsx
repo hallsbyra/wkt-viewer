@@ -1,7 +1,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { describe, it, expect, vi } from 'vitest'
-import { type WktToken } from '@wkt-viewer/shared'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { type MsgFromWebview, type WktToken } from '@wkt-viewer/shared'
 import App, { wktTokensToGeomObjects } from './App'
 
 const testGlobal = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -10,6 +10,23 @@ testGlobal.IS_REACT_ACT_ENVIRONMENT = true
 const reactLeafletMock = vi.hoisted(() => ({
     mapContainerProps: [] as Array<Record<string, unknown>>,
 }))
+
+const postedMessages: MsgFromWebview[] = []
+const vscodeApiMock = {
+    postMessage: vi.fn((message: MsgFromWebview) => {
+        postedMessages.push(message)
+    }),
+    getState: vi.fn(),
+    setState: vi.fn(),
+}
+
+vi.stubGlobal('acquireVsCodeApi', () => vscodeApiMock)
+
+beforeEach(() => {
+    postedMessages.length = 0
+    vscodeApiMock.postMessage.mockClear()
+    reactLeafletMock.mapContainerProps.length = 0
+})
 
 vi.mock('react-leaflet', async () => {
     const React = await vi.importActual<typeof import('react')>('react')
@@ -72,6 +89,25 @@ describe('App map configuration', () => {
 
         const latestMapContainerProps = reactLeafletMock.mapContainerProps[reactLeafletMock.mapContainerProps.length - 1]
         expect(latestMapContainerProps.minZoom).toBeLessThan(0)
+
+        act(() => {
+            root.unmount()
+        })
+        host.remove()
+    })
+})
+
+describe('App VS Code integration', () => {
+    it('notifies the extension when the webview is ready for messages', () => {
+        const host = document.createElement('div')
+        document.body.appendChild(host)
+        const root = createRoot(host)
+
+        act(() => {
+            root.render(<App />)
+        })
+
+        expect(postedMessages).toContainEqual({ command: 'ready' })
 
         act(() => {
             root.unmount()

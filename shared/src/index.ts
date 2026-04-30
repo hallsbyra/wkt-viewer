@@ -11,4 +11,5 @@ export type MsgToWebview =
     | { command: 'select', start: number, end: number, line: number }
 
 export type MsgFromWebview =
+    | { command: 'ready' }
     | { command: 'select', start: number, end: number }
