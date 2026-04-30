@@ -33,6 +33,8 @@ Do not run `vscode-test` from `extension/`; that folder is only a workspace pack
 
 Keep `.vscodeignore` strict. Tests, source maps, TypeScript sources, workspace internals, and release automation files should not ship.
 
+Release and marketplace publishing are documented in [README.md](./README.md#release-and-publishing).
+
 ## Commits
 
 Follow the commit policy in [README.md](./README.md#contributing).
