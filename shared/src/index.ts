@@ -1,9 +1,21 @@
+export type WktAnnotation = {
+    fields: Record<string, string>
+    id?: string
+    tag?: string
+    label?: string
+    start: number
+    end: number
+    line: number
+    endLine: number
+}
+
 export type WktToken = {
     wkt: string
     start: number
     end: number
     line: number
     endLine: number
+    annotation?: WktAnnotation
 }
 
 export type MsgToWebview =

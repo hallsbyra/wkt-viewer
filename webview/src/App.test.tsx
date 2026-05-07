@@ -75,6 +75,38 @@ describe('wktTokensToGeomObjects', () => {
         expect(geomObjects[2].feature.geometry.type).toBe('LineString')
         expect((geomObjects[2].feature.geometry as GeoJSON.LineString).coordinates).toEqual([])
     })
+
+    it('preserves token annotation metadata on geometry objects', () => {
+        const annotatedObjects = wktTokensToGeomObjects([{
+            start: 0,
+            end: 10,
+            line: 0,
+            endLine: 0,
+            wkt: 'POINT(1 1)',
+            annotation: {
+                fields: {
+                    id: 'stroke-001',
+                    tag: 'sweep-01',
+                    label: '1',
+                    custom: 'value',
+                },
+                id: 'stroke-001',
+                tag: 'sweep-01',
+                label: '1',
+                start: 0,
+                end: 43,
+                line: 0,
+                endLine: 0,
+            },
+        }])
+
+        expect(annotatedObjects[0].token.annotation?.fields).toEqual({
+            id: 'stroke-001',
+            tag: 'sweep-01',
+            label: '1',
+            custom: 'value',
+        })
+    })
 })
 
 describe('App map configuration', () => {

@@ -115,4 +115,76 @@ POLYGON (
         assert.equal(result[1].wkt, 'LINESTRING EMPTY')
         assert.equal(result[2].wkt, 'POINT(2 2)')
     })
+
+    test('attaches same-line awkt metadata to the following WKT', () => {
+        const input = '[awkt id=stroke-01234 tag=sweep-0007 label=01234 foo=bar] LINESTRING (0 0, 10 0)'
+        const result = extractWkt(input)
+
+        assert.equal(result.length, 1)
+        assert.equal(result[0].wkt, 'LINESTRING (0 0, 10 0)')
+        assert.deepStrictEqual(result[0].annotation, {
+            fields: {
+                id: 'stroke-01234',
+                tag: 'sweep-0007',
+                label: '01234',
+                foo: 'bar',
+            },
+            id: 'stroke-01234',
+            tag: 'sweep-0007',
+            label: '01234',
+            start: 0,
+            end: input.indexOf(']') + 1,
+            line: 0,
+            endLine: 0,
+        })
+    })
+
+    test('attaches next-line awkt metadata to the following WKT', () => {
+        const input = '[awkt id=stroke-001 tag=sweep-01 label=1]\nLINESTRING (0 0, 10 0)'
+        const result = extractWkt(input)
+
+        assert.equal(result.length, 1)
+        assert.equal(result[0].line, 1)
+        assert.equal(result[0].annotation?.id, 'stroke-001')
+        assert.equal(result[0].annotation?.line, 0)
+    })
+
+    test('attaches multiple inline awkt annotations on one line', () => {
+        const input = '[DBG] Generated: [awkt id=stroke-002 tag=sweep-01 label=2] LINESTRING (10 0, 20 0), [awkt id=stroke-003 tag=sweep-02 label=3] LINESTRING (0 10, 20 10)'
+        const result = extractWkt(input)
+
+        assert.equal(result.length, 2)
+        assert.equal(result[0].annotation?.id, 'stroke-002')
+        assert.equal(result[0].annotation?.tag, 'sweep-01')
+        assert.equal(result[1].annotation?.id, 'stroke-003')
+        assert.equal(result[1].annotation?.tag, 'sweep-02')
+    })
+
+    test('uses awkt metadata only for the first following WKT', () => {
+        const input = '[awkt id=stroke-001] POINT(0 0) POINT(1 1)'
+        const result = extractWkt(input)
+
+        assert.equal(result.length, 2)
+        assert.equal(result[0].annotation?.id, 'stroke-001')
+        assert.equal(result[1].annotation, undefined)
+    })
+
+    test('replaces orphan awkt metadata when another annotation appears before WKT', () => {
+        const input = '[awkt id=orphan] no geometry here [awkt id=stroke-001] POINT(0 0)'
+        const result = extractWkt(input)
+
+        assert.equal(result.length, 1)
+        assert.equal(result[0].annotation?.id, 'stroke-001')
+    })
+
+    test('ignores malformed awkt annotations without dropping nearby WKT', () => {
+        const input = '[awkt id] POINT(0 0) [awkt id=] POINT(1 1)'
+        const result = extractWkt(input)
+
+        assert.equal(result.length, 2)
+        assert.equal(result[0].wkt, 'POINT(0 0)')
+        assert.equal(result[0].annotation, undefined)
+        assert.equal(result[1].wkt, 'POINT(1 1)')
+        assert.equal(result[1].annotation, undefined)
+    })
 })
