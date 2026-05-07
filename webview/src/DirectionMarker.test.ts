@@ -1,4 +1,4 @@
-import { describe, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { getDirectionMarkerInfo } from './DirectionMarker'
 
 // Helper to round numbers for stable assertions
