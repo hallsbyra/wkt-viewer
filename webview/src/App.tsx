@@ -37,12 +37,25 @@ export function wktTokensToGeomObjects(wktTokens: WktToken[]): GeomObject[] {
     })
 }
 
-function findSelectedGeomObject(geomObjects: GeomObject[], start: number, line: number): GeomObject | null {
-    const geomsOnSameLine = geomObjects.filter(obj => obj.token.line <= line && obj.token.endLine >= line)
+export function findSelectedGeomObject(geomObjects: GeomObject[], start: number, line: number): GeomObject | null {
+    const geomsOnSameLine = geomObjects.filter(obj => isTokenOrAnnotationOnLine(obj.token, line))
     // Find the first geometry that contains the start position, or the first on the line.
-    return geomsOnSameLine.find(obj => obj.token.start <= start && obj.token.end >= start) ?? geomsOnSameLine[0] ?? null
+    return geomsOnSameLine.find(obj => containsTokenOrAnnotationOffset(obj.token, start)) ?? geomsOnSameLine[0] ?? null
 }
 
+function isTokenOrAnnotationOnLine(token: WktToken, line: number): boolean {
+    if (token.line <= line && token.endLine >= line) return true
+
+    const annotation = token.annotation
+    return annotation !== undefined && annotation.line <= line && annotation.endLine >= line
+}
+
+function containsTokenOrAnnotationOffset(token: WktToken, start: number): boolean {
+    if (token.start <= start && token.end >= start) return true
+
+    const annotation = token.annotation
+    return annotation !== undefined && annotation.start <= start && annotation.end >= start
+}
 
 export default function App() {
     const [geomObjects, setGeomObjects] = useState<GeomObject[]>([])

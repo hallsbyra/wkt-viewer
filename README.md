@@ -11,6 +11,19 @@ Visualize and navigate files containing WKT (Well Known Text) geometries in Visu
 - Instantly visualizes WKT geometries in the current text editor.
 - Highlights the current geometry as you navigate through text.
 - Selects the corresponding text when you click a geometry in the viewer.
+- Supports optional `[awkt ...]` metadata annotations for WKT embedded in logs.
+
+## Annotated WKT Metadata
+
+WKT Viewer can attach lightweight metadata to geometries found in generic log files:
+
+```text
+[awkt id=stroke-01234 tag=sweep-0007 label=01234] LINESTRING (0 0, 10 0)
+```
+
+The annotation applies to the first WKT geometry after the `[awkt ...]` block, up until the next annotation block. Unannotated WKT still renders normally.
+
+Supported keys are `id`, `tag`, and `label`. Unknown `key=value` fields are preserved for details, but do not affect rendering.
 
 ## Quick Start
 
