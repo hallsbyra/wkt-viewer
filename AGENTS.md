@@ -40,3 +40,7 @@ Release and marketplace publishing are documented in [README.md](./README.md#rel
 Follow the commit policy in [README.md](./README.md#contributing).
 
 Use `build:` for build, CI, packaging, and workflow changes. Do not use `ci:` in this repository.
+
+For issue-backed work, include the issue id at the end of the branch name, for example `feat/awkt-annotations-20`.
+
+For each commit that belongs to an issue-backed branch, include the issue reference in the commit body, for example `#20`.
