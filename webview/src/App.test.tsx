@@ -2,7 +2,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { type MsgFromWebview, type WktToken } from '@wkt-viewer/shared'
-import App, { wktTokensToGeomObjects } from './App'
+import App, { findSelectedGeomObject, wktTokensToGeomObjects } from './App'
 
 const testGlobal = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
 testGlobal.IS_REACT_ACT_ENVIRONMENT = true
@@ -75,6 +75,38 @@ describe('wktTokensToGeomObjects', () => {
         expect(geomObjects[2].feature.geometry.type).toBe('LineString')
         expect((geomObjects[2].feature.geometry as GeoJSON.LineString).coordinates).toEqual([])
     })
+
+    it('preserves token annotation metadata on geometry objects', () => {
+        const annotatedObjects = wktTokensToGeomObjects([{
+            start: 0,
+            end: 10,
+            line: 0,
+            endLine: 0,
+            wkt: 'POINT(1 1)',
+            annotation: {
+                fields: {
+                    id: 'stroke-001',
+                    tag: 'sweep-01',
+                    label: '1',
+                    custom: 'value',
+                },
+                id: 'stroke-001',
+                tag: 'sweep-01',
+                label: '1',
+                start: 0,
+                end: 43,
+                line: 0,
+                endLine: 0,
+            },
+        }])
+
+        expect(annotatedObjects[0].token.annotation?.fields).toEqual({
+            id: 'stroke-001',
+            tag: 'sweep-01',
+            label: '1',
+            custom: 'value',
+        })
+    })
 })
 
 describe('App map configuration', () => {
@@ -94,6 +126,28 @@ describe('App map configuration', () => {
             root.unmount()
         })
         host.remove()
+    })
+})
+
+describe('findSelectedGeomObject', () => {
+    it('selects a geometry when the editor selection is on its annotation', () => {
+        const geomObjects = wktTokensToGeomObjects([{
+            start: 22,
+            end: 32,
+            line: 1,
+            endLine: 1,
+            wkt: 'POINT(1 1)',
+            annotation: {
+                fields: { id: 'stroke-001' },
+                id: 'stroke-001',
+                start: 0,
+                end: 21,
+                line: 0,
+                endLine: 0,
+            },
+        }])
+
+        expect(findSelectedGeomObject(geomObjects, 5, 0)?.token.annotation?.id).toBe('stroke-001')
     })
 })
 

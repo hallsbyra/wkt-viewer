@@ -2,6 +2,7 @@ import * as LL from 'leaflet'
 import { useEffect, useMemo } from 'react'
 import * as RL from 'react-leaflet'
 import { GeomObject } from './App'
+import { getAnnotationEntries, getTagColor } from './annotation'
 import { getDirectionMarkers } from './DirectionMarker'
 import { calculateBoundingBox } from './geojson-util'
 import { DEFAULT_PATH_STYLE, POINT_RADIUS, POINT_RADIUS_SELECTED, SELECTED_PATH_STYLE } from './styles'
@@ -30,18 +31,33 @@ export function GeomObjectsMap({
 
     // Style function
     function styleFn(geomObj: GeomObject): LL.PathOptions {
-        return geomObj.id === selectedId ? SELECTED_PATH_STYLE : DEFAULT_PATH_STYLE
+        const tagColor = getTagColor(geomObj.token.annotation?.tag)
+        if (!tagColor) {
+            return geomObj.id === selectedId ? SELECTED_PATH_STYLE : DEFAULT_PATH_STYLE
+        }
+
+        return {
+            ...DEFAULT_PATH_STYLE,
+            color: tagColor,
+            fillColor: tagColor,
+            weight: geomObj.id === selectedId ? 4 : DEFAULT_PATH_STYLE.weight,
+            opacity: geomObj.id === selectedId ? 1 : DEFAULT_PATH_STYLE.opacity,
+            fillOpacity: geomObj.id === selectedId ? 0.45 : DEFAULT_PATH_STYLE.fillOpacity,
+        }
     }
 
     // Create marker for POINT geometries
     function createPointMarker(geomObj: GeomObject, latlng: LL.LatLng) {
+        const pathStyle = styleFn(geomObj)
         return LL.circleMarker(latlng, {
             radius: geomObj.id === selectedId ? POINT_RADIUS_SELECTED : POINT_RADIUS,
+            ...pathStyle,
         })
     }
 
     const handleFeatureClick = (geomObj: GeomObject) => (_feature: GeoJSON.Feature, layer: LL.Layer) => {
         layer.on('click', () => onSelect?.(geomObj))
+        bindMetadataTooltip(geomObj, layer)
     }
 
     const directionMarkers = useMemo(() => {
@@ -67,6 +83,40 @@ export function GeomObjectsMap({
             {directionMarkers}
         </>
     )
+}
+
+function bindMetadataTooltip(geomObj: GeomObject, layer: LL.Layer) {
+    const annotation = geomObj.token.annotation
+    if (!annotation) return
+
+    const tooltipLayer = layer as LL.Layer & {
+        bindTooltip?: (content: HTMLElement, options?: LL.TooltipOptions) => LL.Layer
+    }
+    tooltipLayer.bindTooltip?.(createMetadataTooltip(annotation), {
+        sticky: true,
+        direction: 'top',
+    })
+}
+
+function createMetadataTooltip(annotation: NonNullable<GeomObject['token']['annotation']>): HTMLElement {
+    const container = document.createElement('div')
+    container.style.display = 'grid'
+    container.style.gridTemplateColumns = 'auto 1fr'
+    container.style.gap = '2px 8px'
+
+    for (const [key, value] of getAnnotationEntries(annotation)) {
+        const keyElement = document.createElement('span')
+        keyElement.textContent = key
+        keyElement.style.fontWeight = '600'
+
+        const valueElement = document.createElement('span')
+        valueElement.textContent = value
+        valueElement.style.fontFamily = 'monospace'
+
+        container.append(keyElement, valueElement)
+    }
+
+    return container
 }
 
 // Allow middle-button drag panning without changing Leaflet's default drag behavior.
