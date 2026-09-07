@@ -4,6 +4,13 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.6.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.5.0...v0.6.0) (2026-09-07)
+
+
+### ✨ Features
+
+* add locked WKT viewing areas ([#24](https://github.com/hallsbyra/wkt-viewer/issues/24)) ([4a912e8](https://github.com/hallsbyra/wkt-viewer/commit/4a912e884dd5deace7d206983990dc1c067a6153))
+
 ## [0.5.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.4.0...v0.5.0) (2026-09-07)
 
 
