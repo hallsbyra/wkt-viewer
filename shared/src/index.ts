@@ -38,7 +38,13 @@ export type MsgToWebview =
         areaLineRange?: { start: number, end: number }
         fitId: number
     }
-    | { command: 'select', source: SourceDocument, start: number, end: number, line: number }
+    | {
+        command: 'select'
+        source: SourceDocument
+        start: number
+        end: number
+        captureAvailable: boolean
+    }
 
 export type MsgFromWebview =
     | { command: 'ready' }

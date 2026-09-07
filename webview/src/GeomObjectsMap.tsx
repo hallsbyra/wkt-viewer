@@ -1,5 +1,5 @@
 import * as LL from 'leaflet'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as RL from 'react-leaflet'
 import { GeomObject } from './App'
 import { getAnnotationEntries, getTagColor } from './annotation'
@@ -19,19 +19,20 @@ export function GeomObjectsMap({
     fitId: number
 }) {
     const map = RL.useMap()
-    // Compute overall bounds and a stable key so we can detect real changes.
-    const { bounds, boundsKey } = useMemo(() => {
-        const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry))
-        if (!bounds) return { bounds: null, boundsKey: '' }
-        const boundsKey = `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`
-        return { bounds, boundsKey }
-    }, [geomObjects])
+    const bounds = useMemo(
+        () => calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry)),
+        [geomObjects],
+    )
+    const latestObjects = useRef(geomObjects)
+    const latestOnSelect = useRef(onSelect)
+    latestObjects.current = geomObjects
+    latestOnSelect.current = onSelect
 
-    // Scope changes and the explicit control provide fitId. Selection and typing do not.
+    // Scope changes and the explicit control provide fitId. Coordinates alone do not.
     useEffect(() => {
         if (!bounds) return
         map.fitBounds(bounds, { padding: [10, 10] })
-    }, [fitId, boundsKey, map])
+    }, [fitId, map])
 
     // Style function
     function styleFn(geomObj: GeomObject): LL.PathOptions {
@@ -60,7 +61,10 @@ export function GeomObjectsMap({
     }
 
     const handleFeatureClick = (geomObj: GeomObject) => (_feature: GeoJSON.Feature, layer: LL.Layer) => {
-        layer.on('click', () => onSelect?.(geomObj))
+        layer.on('click', () => {
+            const currentObject = latestObjects.current.find(object => object.id === geomObj.id)
+            if (currentObject) latestOnSelect.current?.(currentObject)
+        })
         bindMetadataTooltip(geomObj, layer)
     }
 

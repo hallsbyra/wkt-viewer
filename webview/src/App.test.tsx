@@ -1,7 +1,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { type MsgFromWebview, type WktToken } from '@wkt-viewer/shared'
+import { type MsgFromWebview, type MsgToWebview, type WktToken } from '@wkt-viewer/shared'
 import App, { findSelectedGeomObject, wktTokensToGeomObjects } from './App'
 
 const testGlobal = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -20,9 +20,22 @@ const vscodeApiMock = {
     setState: vi.fn(),
 }
 
+const source = { uri: 'file:///test.wkt', version: 1, filename: 'test.wkt' }
+function updateMessage(wkt: WktToken[]): MsgToWebview {
+    return {
+        command: 'update',
+        wkt,
+        source,
+        scope: { kind: 'document' },
+        captureAvailable: false,
+        fitId: 0,
+    }
+}
+
 vi.stubGlobal('acquireVsCodeApi', () => vscodeApiMock)
 
 beforeEach(() => {
+    HTMLElement.prototype.scrollIntoView = vi.fn()
     postedMessages.length = 0
     vscodeApiMock.postMessage.mockClear()
     reactLeafletMock.mapContainerProps.length = 0
@@ -161,7 +174,26 @@ describe('findSelectedGeomObject', () => {
             },
         }])
 
-        expect(findSelectedGeomObject(geomObjects, 5, 0)?.token.annotation?.id).toBe('stroke-001')
+        expect(findSelectedGeomObject(geomObjects, 5, { kind: 'document' })?.token.annotation?.id).toBe('stroke-001')
+    })
+
+    it('does not select an annotation outside an active area', () => {
+        const geomObjects = wktTokensToGeomObjects([{
+            start: 22,
+            end: 32,
+            line: 1,
+            endLine: 1,
+            wkt: 'POINT(1 1)',
+            annotation: {
+                fields: { id: 'stroke-001' },
+                start: 0,
+                end: 21,
+                line: 0,
+                endLine: 0,
+            },
+        }])
+
+        expect(findSelectedGeomObject(geomObjects, 5, { kind: 'area', start: 22, end: 32 })).toBeNull()
     })
 })
 
@@ -176,14 +208,11 @@ describe('App VS Code integration', () => {
                 root.render(<App />)
             })
             act(() => {
-                window.dispatchEvent(new MessageEvent('message', { data: {
-                    command: 'update',
-                    wkt: [
+                window.dispatchEvent(new MessageEvent('message', { data: updateMessage([
                         { start: 0, end: 31, line: 0, endLine: 0, wkt: 'POLYGON ((0 0, 10 0, 5 8, 0 0))' },
                         { start: 50, end: 61, line: 1, endLine: 1, wkt: 'Point(0, 4)' },
                         { start: 70, end: 101, line: 2, endLine: 2, wkt: 'POLYGON ((0 0, 10 0, 5 8, 0 0))' },
-                    ],
-                } }))
+                    ]) }))
             })
 
             expect(host.querySelector('h3')?.textContent).toBe('Geometries (2)')
@@ -211,5 +240,30 @@ describe('App VS Code integration', () => {
             root.unmount()
         })
         host.remove()
+    })
+
+    it('accepts an update and matching selection sent in the same event turn', () => {
+        const host = document.createElement('div')
+        document.body.appendChild(host)
+        const root = createRoot(host)
+        const wkt = [{ start: 0, end: 10, line: 0, endLine: 0, wkt: 'POINT(1 1)' }]
+
+        try {
+            act(() => {
+                root.render(<App />)
+            })
+            act(() => {
+                window.dispatchEvent(new MessageEvent('message', { data: updateMessage(wkt) }))
+                window.dispatchEvent(new MessageEvent('message', { data: {
+                    command: 'select', source, start: 0, end: 0, captureAvailable: true,
+                } satisfies MsgToWebview }))
+            })
+
+            const row = host.querySelector<HTMLElement>('[data-geom-id="0"]')
+            expect(row?.style.borderColor).toBe('rgb(2, 136, 209)')
+        } finally {
+            act(() => root.unmount())
+            host.remove()
+        }
     })
 })
