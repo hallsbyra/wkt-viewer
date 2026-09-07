@@ -26,11 +26,12 @@ export function calculateBoundingBox(geometries: GeoJSON.Geometry[]) {
     for (const geom of geometries) {
         const coords = getCoords(geom)
         for (const [x, y] of coords) {
+            if (!Number.isFinite(x) || !Number.isFinite(y)) continue
             if (x < minX) minX = x
             if (y < minY) minY = y
             if (x > maxX) maxX = x
             if (y > maxY) maxY = y
         }
     }
-    return [[minY, minX], [maxY, maxX]] as [[number, number], [number, number]]
+    return Number.isFinite(minX) ? [[minY, minX], [maxY, maxX]] as [[number, number], [number, number]] : null
 }

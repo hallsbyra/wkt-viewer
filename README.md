@@ -11,6 +11,7 @@ Visualize and navigate files containing WKT (Well Known Text) geometries in Visu
 - Instantly visualizes WKT geometries in the current text editor.
 - Highlights the current geometry as you navigate through text.
 - Selects the corresponding text when you click a geometry in the viewer.
+- Lets you lock the viewer to a selected text area. The area follows edits and remains independent while you navigate the document.
 - Supports optional `[awkt ...]` metadata annotations for WKT embedded in logs.
 
 ## Annotated WKT Metadata
@@ -30,6 +31,8 @@ Supported keys are `id`, `tag`, and `label`. Unknown `key=value` fields are pres
 1. Install **WKT Viewer** from the VS Code Marketplace.
 2. Open a file containing WKT geometries.
 3. Run `Start WKT Viewer` from the command palette.
+
+Use **Aktuellt område** to capture the non-empty primary editor selection, or **Hela dokumentet** to return to the complete file. **Visa alla i bild** fits the geometries in the currently active scope.
 
 ## Extension Settings
 

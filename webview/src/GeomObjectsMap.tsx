@@ -1,5 +1,5 @@
 import * as LL from 'leaflet'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as RL from 'react-leaflet'
 import { GeomObject } from './App'
 import { getAnnotationEntries, getTagColor } from './annotation'
@@ -10,24 +10,38 @@ import { DEFAULT_PATH_STYLE, POINT_RADIUS, POINT_RADIUS_SELECTED, SELECTED_PATH_
 export function GeomObjectsMap({
     geomObjects,
     selectedId,
-    onSelect
+    onSelect,
+    fitId,
 }: {
     geomObjects: GeomObject[]
     selectedId?: number | null
     onSelect?: (obj: GeomObject) => void
+    fitId: number
 }) {
     const map = RL.useMap()
-    // Compute overall bounds and a stable key so we can detect real changes.
-    const { bounds, boundsKey } = useMemo(() => {
-        const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry)) ?? [[0,0], [1,1]]
-        const boundsKey = `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`
-        return { bounds, boundsKey }
-    }, [geomObjects])
+    const bounds = useMemo(
+        () => calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry)),
+        [geomObjects],
+    )
+    const latestObjects = useRef(geomObjects)
+    const latestOnSelect = useRef(onSelect)
+    const lastFitId = useRef<number | null>(null)
+    const hasFittedCurrentScope = useRef(false)
+    latestObjects.current = geomObjects
+    latestOnSelect.current = onSelect
 
-    // Fit bounds when the overall bounds change (initial load or content update)
+    // A new document/scope starts a fresh fitting cycle. If it starts empty,
+    // fit once when its first valid geometry arrives; later edits keep the view.
     useEffect(() => {
+        if (lastFitId.current !== fitId) {
+            lastFitId.current = fitId
+            hasFittedCurrentScope.current = false
+        }
+        if (!bounds || hasFittedCurrentScope.current) return
+
         map.fitBounds(bounds, { padding: [10, 10] })
-    }, [boundsKey, map])
+        hasFittedCurrentScope.current = true
+    }, [bounds, fitId, map])
 
     // Style function
     function styleFn(geomObj: GeomObject): LL.PathOptions {
@@ -56,7 +70,10 @@ export function GeomObjectsMap({
     }
 
     const handleFeatureClick = (geomObj: GeomObject) => (_feature: GeoJSON.Feature, layer: LL.Layer) => {
-        layer.on('click', () => onSelect?.(geomObj))
+        layer.on('click', () => {
+            const currentObject = latestObjects.current.find(object => object.id === geomObj.id)
+            if (currentObject) latestOnSelect.current?.(currentObject)
+        })
         bindMetadataTooltip(geomObj, layer)
     }
 
@@ -73,7 +90,7 @@ export function GeomObjectsMap({
         <>
             {geomObjects.map(geomObj => (
                 <RL.GeoJSON
-                    key={geomObj.id}
+                    key={`${geomObj.id}:${geomObj.token.end}:${geomObj.token.wkt}`}
                     data={geomObj.feature}
                     onEachFeature={handleFeatureClick(geomObj)}
                     style={() => styleFn(geomObj)}
