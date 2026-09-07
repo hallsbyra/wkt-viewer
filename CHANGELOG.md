@@ -4,6 +4,24 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.5.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.4.0...v0.5.0) (2026-09-07)
+
+
+### ✨ Features
+
+* Support awkt metadata annotations ([#22](https://github.com/hallsbyra/wkt-viewer/issues/22)) ([705da85](https://github.com/hallsbyra/wkt-viewer/commit/705da85c77f99b09a6fcba0ad51d7b3574e28732))
+
+
+### 🐛 Bug Fixes
+
+* render valid WKT when source code contains invalid matches ([b8b9b81](https://github.com/hallsbyra/wkt-viewer/commit/b8b9b8163634575b5ca261e254b93f248c6139f1))
+
+
+### ⬆️ Dependency Updates
+
+* update npm dependencies ([81ee353](https://github.com/hallsbyra/wkt-viewer/commit/81ee35371237d86587795f00b55a6b7b60e7cdfc))
+* update npm dependencies and use Node 24 for development ([8e7c2f4](https://github.com/hallsbyra/wkt-viewer/commit/8e7c2f4ee5d327eeb594d0313b54644bacc6eee4))
+
 ## [0.4.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.3.1...v0.4.0) (2026-04-30)
 
 
