@@ -25,14 +25,23 @@ export function GeomObjectsMap({
     )
     const latestObjects = useRef(geomObjects)
     const latestOnSelect = useRef(onSelect)
+    const lastFitId = useRef<number | null>(null)
+    const hasFittedCurrentScope = useRef(false)
     latestObjects.current = geomObjects
     latestOnSelect.current = onSelect
 
-    // Scope changes and the explicit control provide fitId. Coordinates alone do not.
+    // A new document/scope starts a fresh fitting cycle. If it starts empty,
+    // fit once when its first valid geometry arrives; later edits keep the view.
     useEffect(() => {
-        if (!bounds) return
+        if (lastFitId.current !== fitId) {
+            lastFitId.current = fitId
+            hasFittedCurrentScope.current = false
+        }
+        if (!bounds || hasFittedCurrentScope.current) return
+
         map.fitBounds(bounds, { padding: [10, 10] })
-    }, [fitId, map])
+        hasFittedCurrentScope.current = true
+    }, [bounds, fitId, map])
 
     // Style function
     function styleFn(geomObj: GeomObject): LL.PathOptions {
