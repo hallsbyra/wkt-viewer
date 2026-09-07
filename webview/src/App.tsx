@@ -7,6 +7,8 @@ import { WebviewApi } from 'vscode-webview'
 import { type MsgFromWebview, type MsgToWebview, type SourceDocument, type ViewingScope, type WktToken } from '@wkt-viewer/shared'
 import { GeomObjectsList } from './GeomObjectsList'
 import { GeomObjectsMap } from './GeomObjectsMap'
+import { ViewerHeader } from './ViewerHeader'
+import './App.css'
 
 export type GeomObject = {
     id: number
@@ -119,37 +121,19 @@ export default function App() {
     }, [source])
 
     return (
-        <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
-            <div style={sidePanelStyle}>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                    <button
-                        onClick={() => sendScopeRequest('showDocument')}
-                        aria-pressed={scope.kind === 'document'}
-                        style={scopeButtonStyle(scope.kind === 'document')}
-                    >
-                        Hela dokumentet
-                    </button>
-                    <button
-                        onClick={() => sendScopeRequest('captureArea')}
-                        disabled={!captureAvailable}
-                        aria-pressed={scope.kind === 'area'}
-                        style={scopeButtonStyle(scope.kind === 'area')}
-                    >
-                        Aktuellt område
-                    </button>
-                </div>
-                {source && <div style={{ fontSize: 12, marginBottom: 8, color: '#555' }}>
-                    {scope.kind === 'area' && areaLineRange
-                        ? `${source.filename} · Rader ${areaLineRange.start}–${areaLineRange.end} · ${geomObjects.length} geometrier`
-                        : `${source.filename} · ${geomObjects.length} geometrier`}
-                </div>}
-                <button onClick={() => sendScopeRequest('fitAll')} style={{ marginBottom: 8 }}>
-                    Visa alla i bild
-                </button>
-                {scope.kind === 'area' && geomObjects.length === 0 && <p>Inga WKT-geometrier i området</p>}
+        <div className="viewer">
+            <aside className="sidebar">
+                <ViewerHeader
+                    source={source}
+                    scope={scope}
+                    captureAvailable={captureAvailable}
+                    areaLineRange={areaLineRange}
+                    onCommand={sendScopeRequest}
+                />
+                {scope.kind === 'area' && geomObjects.length === 0 && <p className="empty-area">Inga WKT-geometrier i området</p>}
                 <GeomObjectsList geomObjects={geomObjects} selectedId={selectedId} onSelect={handleSelect} />
-            </div>
-            <div style={{ flex: 1, position: 'relative' }}>
+            </aside>
+            <div className="map-container">
                 <MapContainer
                     crs={LL.CRS.Simple}
                     style={{ height: '100%', width: '100%' }}
@@ -161,21 +145,4 @@ export default function App() {
             </div>
         </div>
     )
-}
-
-const sidePanelStyle = {
-    width: 320,
-    background: '#f9f9f9',
-    borderRight: '1px solid #eee',
-    overflow: 'hidden',
-    padding: 8,
-    boxSizing: 'border-box' as const,
-    display: 'flex',
-    flexDirection: 'column' as const,
-}
-
-function scopeButtonStyle(active: boolean) {
-    return active
-        ? { background: '#007acc', color: '#fff', borderColor: '#005a9e', fontWeight: 600 }
-        : undefined
 }
