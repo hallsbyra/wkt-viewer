@@ -37,7 +37,7 @@ Supported keys are `id`, `tag`, and `label`. Unknown `key=value` fields are pres
 
 ## Development
 
-Requirements: Node.js 20 and npm.
+Requirements: Node.js 24 LTS (24.15.0 or newer) and npm.
 
 ```sh
 npm ci
