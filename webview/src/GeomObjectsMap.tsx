@@ -10,24 +10,28 @@ import { DEFAULT_PATH_STYLE, POINT_RADIUS, POINT_RADIUS_SELECTED, SELECTED_PATH_
 export function GeomObjectsMap({
     geomObjects,
     selectedId,
-    onSelect
+    onSelect,
+    fitId,
 }: {
     geomObjects: GeomObject[]
     selectedId?: number | null
     onSelect?: (obj: GeomObject) => void
+    fitId: number
 }) {
     const map = RL.useMap()
     // Compute overall bounds and a stable key so we can detect real changes.
     const { bounds, boundsKey } = useMemo(() => {
-        const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry)) ?? [[0,0], [1,1]]
+        const bounds = calculateBoundingBox(geomObjects.map(obj => obj.feature.geometry))
+        if (!bounds) return { bounds: null, boundsKey: '' }
         const boundsKey = `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`
         return { bounds, boundsKey }
     }, [geomObjects])
 
-    // Fit bounds when the overall bounds change (initial load or content update)
+    // Scope changes and the explicit control provide fitId. Selection and typing do not.
     useEffect(() => {
+        if (!bounds) return
         map.fitBounds(bounds, { padding: [10, 10] })
-    }, [boundsKey, map])
+    }, [fitId, boundsKey, map])
 
     // Style function
     function styleFn(geomObj: GeomObject): LL.PathOptions {
@@ -73,7 +77,7 @@ export function GeomObjectsMap({
         <>
             {geomObjects.map(geomObj => (
                 <RL.GeoJSON
-                    key={geomObj.id}
+                    key={`${geomObj.id}:${geomObj.token.end}:${geomObj.token.wkt}`}
                     data={geomObj.feature}
                     onEachFeature={handleFeatureClick(geomObj)}
                     style={() => styleFn(geomObj)}

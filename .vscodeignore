@@ -13,6 +13,7 @@ release-please-config.json
 **/eslint.config.mjs
 **/tsconfig.json
 icon.svg
+test.cs
 extension/package.json
 extension/dist/test/**
 extension/src/**

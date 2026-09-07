@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { useCallback, useEffect, useState } from 'react'
 import { MapContainer } from 'react-leaflet'
 import { WebviewApi } from 'vscode-webview'
-import { type MsgFromWebview, type MsgToWebview, type WktToken } from '@wkt-viewer/shared'
+import { type MsgFromWebview, type MsgToWebview, type SourceDocument, type ViewingScope, type WktToken } from '@wkt-viewer/shared'
 import { GeomObjectsList } from './GeomObjectsList'
 import { GeomObjectsMap } from './GeomObjectsMap'
 import { useLatest } from './react-util'
@@ -45,29 +45,27 @@ export function wktTokensToGeomObjects(wktTokens: WktToken[]): GeomObject[] {
 }
 
 export function findSelectedGeomObject(geomObjects: GeomObject[], start: number, line: number): GeomObject | null {
-    const geomsOnSameLine = geomObjects.filter(obj => isTokenOrAnnotationOnLine(obj.token, line))
-    // Find the first geometry that contains the start position, or the first on the line.
-    return geomsOnSameLine.find(obj => containsTokenOrAnnotationOffset(obj.token, start)) ?? geomsOnSameLine[0] ?? null
-}
-
-function isTokenOrAnnotationOnLine(token: WktToken, line: number): boolean {
-    if (token.line <= line && token.endLine >= line) return true
-
-    const annotation = token.annotation
-    return annotation !== undefined && annotation.line <= line && annotation.endLine >= line
+    void line
+    return geomObjects.find(obj => containsTokenOrAnnotationOffset(obj.token, start)) ?? null
 }
 
 function containsTokenOrAnnotationOffset(token: WktToken, start: number): boolean {
-    if (token.start <= start && token.end >= start) return true
+    if (token.start <= start && token.end > start) return true
 
     const annotation = token.annotation
-    return annotation !== undefined && annotation.start <= start && annotation.end >= start
+    return annotation !== undefined && annotation.start <= start && annotation.end > start
 }
 
 export default function App() {
     const [geomObjects, setGeomObjects] = useState<GeomObject[]>([])
     const geomObjectsRef = useLatest(geomObjects)
     const [selectedId, setSelectedId] = useState<number | null>(null)
+    const [source, setSource] = useState<SourceDocument | null>(null)
+    const sourceRef = useLatest(source)
+    const [scope, setScope] = useState<ViewingScope>({ kind: 'document' })
+    const [captureAvailable, setCaptureAvailable] = useState(false)
+    const [areaLineRange, setAreaLineRange] = useState<{ start: number, end: number } | undefined>()
+    const [fitId, setFitId] = useState(0)
 
     // --- VSCode Message Listener ---
     useEffect(() => {
@@ -76,7 +74,14 @@ export default function App() {
                 if (msg.data.command === 'update') {
                     console.log(`'update' message received`, msg.data.wkt)
                     setGeomObjects(wktTokensToGeomObjects(msg.data.wkt))
+                    setSelectedId(null)
+                    setSource(msg.data.source ?? null)
+                    setScope(msg.data.scope ?? { kind: 'document' })
+                    setCaptureAvailable(msg.data.captureAvailable ?? false)
+                    setAreaLineRange(msg.data.areaLineRange)
+                    setFitId(msg.data.fitId)
                 } else if (msg.data.command === 'select') {
+                    if (sourceRef.current?.uri !== msg.data.source.uri || sourceRef.current?.version !== msg.data.source.version) return
                     console.log(`'select' message received`, msg.data.start, msg.data.end)
                     const selectedObj = findSelectedGeomObject(geomObjectsRef.current, msg.data.start, msg.data.line)
                     setSelectedId(selectedObj?.id ?? null)
@@ -94,13 +99,19 @@ export default function App() {
 
     // --- Handle selection (from list or map) ---
     const handleSelect = useCallback((obj: GeomObject) => {
+        if (!source) return
         setSelectedId(obj.id)
         postMsgToVscode({
             command: 'select',
             start: obj.token.start,
             end: obj.token.end,
+            source,
         })
-    }, [])
+    }, [source])
+
+    const sendScopeRequest = useCallback((command: 'captureArea' | 'showDocument' | 'fitAll') => {
+        if (source) postMsgToVscode({ command, source })
+    }, [source])
 
     return (
         <div style={{
@@ -116,6 +127,17 @@ export default function App() {
                 overflow: 'auto',
                 padding: 8,
             }}>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                    <button onClick={() => sendScopeRequest('showDocument')} aria-pressed={scope.kind === 'document'}>Hela dokumentet</button>
+                    <button onClick={() => sendScopeRequest('captureArea')} disabled={!captureAvailable} aria-pressed={scope.kind === 'area'}>Aktuellt område</button>
+                </div>
+                {source && <div style={{ fontSize: 12, marginBottom: 8, color: '#555' }}>
+                    {scope.kind === 'area' && areaLineRange
+                        ? `${source.filename} · Rader ${areaLineRange.start}–${areaLineRange.end} · ${geomObjects.length} geometrier`
+                        : `${source.filename} · ${geomObjects.length} geometrier`}
+                </div>}
+                <button onClick={() => sendScopeRequest('fitAll')} style={{ marginBottom: 8 }}>Visa alla i bild</button>
+                {scope.kind === 'area' && geomObjects.length === 0 && <p>Inga WKT-geometrier i området</p>}
                 <GeomObjectsList
                     geomObjects={geomObjects}
                     selectedId={selectedId}
@@ -135,6 +157,7 @@ export default function App() {
                         geomObjects={geomObjects}
                         selectedId={selectedId}
                         onSelect={handleSelect}
+                        fitId={fitId}
                     />
                 </MapContainer>
             </div>
