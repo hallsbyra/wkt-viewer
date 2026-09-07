@@ -116,6 +116,29 @@ POLYGON (
         assert.equal(result[2].wkt, 'POINT(2 2)')
     })
 
+    test('preserves source positions when recovering from C# factory method names', () => {
+        const wkt = 'POLYGON ((0 0, 10 0, 5 8, 0 0))'
+        const input = [
+            'var first = NtsTestFactory.Polygon(',
+            `    "${wkt}");`,
+            'var second = NtsTestFactory.Polygon(',
+            `    "${wkt}");`,
+        ].join('\r\n')
+
+        assert.deepStrictEqual(extractWkt(input), [
+            { wkt, start: input.indexOf(wkt), end: input.indexOf(wkt) + wkt.length, line: 1, endLine: 1 },
+            { wkt, start: input.lastIndexOf(wkt), end: input.lastIndexOf(wkt) + wkt.length, line: 3, endLine: 3 },
+        ])
+    })
+
+    test('preserves line numbers when recovery rewinds across a newline', () => {
+        const input = 'POLYGON ( \n"invalid")\nPOINT(1 2)'
+        const wkt = 'POINT(1 2)'
+        assert.deepStrictEqual(extractWkt(input), [
+            { wkt, start: input.indexOf(wkt), end: input.length, line: 2, endLine: 2 },
+        ])
+    })
+
     test('attaches same-line awkt metadata to the following WKT', () => {
         const input = '[awkt id=stroke-01234 tag=sweep-0007 label=01234 foo=bar] LINESTRING (0 0, 10 0)'
         const result = extractWkt(input)

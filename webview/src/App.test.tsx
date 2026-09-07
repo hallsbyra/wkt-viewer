@@ -76,6 +76,20 @@ describe('wktTokensToGeomObjects', () => {
         expect((geomObjects[2].feature.geometry as GeoJSON.LineString).coordinates).toEqual([])
     })
 
+    it('keeps valid geometries before and after a C# constructor mistaken for WKT', () => {
+        const invalidToken = { start: 100, end: 111, line: 5, endLine: 5, wkt: 'Point(0, 4)' }
+        const result = wktTokensToGeomObjects([tokens[0], invalidToken, tokens[1]])
+
+        expect(result.map(obj => obj.token)).toEqual([tokens[0], tokens[1]])
+        expect(result.map(obj => obj.id)).toEqual([tokens[0].start, tokens[1].start])
+    })
+
+    it('returns no geometries when all candidates are invalid', () => {
+        expect(wktTokensToGeomObjects([
+            { start: 0, end: 11, line: 0, endLine: 0, wkt: 'Point(0, 4)' },
+        ])).toEqual([])
+    })
+
     it('preserves token annotation metadata on geometry objects', () => {
         const annotatedObjects = wktTokensToGeomObjects([{
             start: 0,
@@ -152,6 +166,36 @@ describe('findSelectedGeomObject', () => {
 })
 
 describe('App VS Code integration', () => {
+    it('displays valid WKT from a document containing a false positive', () => {
+        const host = document.createElement('div')
+        document.body.appendChild(host)
+        const root = createRoot(host)
+
+        try {
+            act(() => {
+                root.render(<App />)
+            })
+            act(() => {
+                window.dispatchEvent(new MessageEvent('message', { data: {
+                    command: 'update',
+                    wkt: [
+                        { start: 0, end: 31, line: 0, endLine: 0, wkt: 'POLYGON ((0 0, 10 0, 5 8, 0 0))' },
+                        { start: 50, end: 61, line: 1, endLine: 1, wkt: 'Point(0, 4)' },
+                        { start: 70, end: 101, line: 2, endLine: 2, wkt: 'POLYGON ((0 0, 10 0, 5 8, 0 0))' },
+                    ],
+                } }))
+            })
+
+            expect(host.querySelector('h3')?.textContent).toBe('Geometries (2)')
+            expect(Array.from(host.querySelectorAll('[data-geom-id]'), row => row.getAttribute('data-geom-id'))).toEqual(['0', '70'])
+        } finally {
+            act(() => {
+                root.unmount()
+            })
+            host.remove()
+        }
+    })
+
     it('notifies the extension when the webview is ready for messages', () => {
         const host = document.createElement('div')
         document.body.appendChild(host)

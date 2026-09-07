@@ -26,14 +26,21 @@ function postMsgToVscode(msg: MsgFromWebview) {
 }
 
 export function wktTokensToGeomObjects(wktTokens: WktToken[]): GeomObject[] {
-    return wktTokens.map(wktToken => {
-        const geojson = wktToGeoJSON(wktToken.wkt)
-        if (!geojson) throw new Error('Invalid WKT: ' + wktToken.wkt)
-        return {
+    return wktTokens.flatMap(wktToken => {
+        let geojson: ReturnType<typeof wktToGeoJSON>
+        try {
+            geojson = wktToGeoJSON(wktToken.wkt)
+        } catch {
+            // Source code can contain lookalikes such as Point(0, 4).
+            // A failed candidate must not prevent valid geometries from rendering.
+            return []
+        }
+        if (!geojson) return []
+        return [{
             id: wktToken.start,
             token: wktToken,
             feature: { type: 'Feature', geometry: geojson as GeoJSON.Geometry, properties: {} },
-        }
+        }]
     })
 }
 

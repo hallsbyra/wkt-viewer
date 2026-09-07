@@ -107,6 +107,7 @@ export function extractWkt(
         if (endIdx === -1) {
             // Unmatched or gave up: attempt resync after the point we gave up
             i = recoveredAt > wordStart ? recoveredAt : (wordStart + 1)
+            line = endLine
             if (i >= len) break
             continue
         }
@@ -191,6 +192,7 @@ function findMatchingParenWithLineRecover(str: string, open: number, startLine: 
     let line = startLine
     const len = str.length
     let lastCommaOrSpace = open
+    let lastCommaOrSpaceLine = startLine
     const allowedWords = new Set<string>([...TOP, 'EMPTY'])
 
     for (let j = open; j < len; j++) {
@@ -205,12 +207,13 @@ function findMatchingParenWithLineRecover(str: string, open: number, startLine: 
             }
         } else if (ch === 44 /* , */ || ch === 32 /* space */) {
             lastCommaOrSpace = j
+            lastCommaOrSpaceLine = line
         } else if (ch === 9 /* tab */) {
             // allow tabs for indentation
             continue
         } else if (!isAlpha(ch) && ch !== 46 /* . */ && (ch < 48 || ch > 57) && ch !== 45 /* - */) {
             // Allow other structural chars like newline already handled, semicolons or stray letters cause recovery
-            return { endIdx: -1, endLine: line, recoveredAt: lastCommaOrSpace + 1 }
+            return { endIdx: -1, endLine: lastCommaOrSpaceLine, recoveredAt: lastCommaOrSpace + 1 }
         } else if (isAlpha(ch)) {
             // Potential word inside geometry content
             const wordStart = j
