@@ -25,7 +25,7 @@ export function GeomObjectsList({
     }, [selectedId])
 
     return (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
             <h3 style={{ margin: '4px 0 8px 0' }}>Geometries ({geomObjects.length})</h3>
             <input
                 value={query}
@@ -43,7 +43,7 @@ export function GeomObjectsList({
             />
             <ul 
                 ref={listContainerRef}
-                style={{ listStyle: 'none', padding: 0, margin: 0 }}
+                style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', minHeight: 0, flex: 1 }}
             >
                 {filteredGeomObjects.map((obj) => {
                     const originalIndex = geomObjects.indexOf(obj)

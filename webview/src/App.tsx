@@ -124,8 +124,11 @@ export default function App() {
                 width: 320,
                 background: '#f9f9f9',
                 borderRight: '1px solid #eee',
-                overflow: 'auto',
+                overflow: 'hidden',
                 padding: 8,
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
             }}>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                     <button onClick={() => sendScopeRequest('showDocument')} aria-pressed={scope.kind === 'document'}>Hela dokumentet</button>
