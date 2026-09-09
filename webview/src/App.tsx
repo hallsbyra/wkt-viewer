@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MapContainer } from 'react-leaflet'
 import { WebviewApi } from 'vscode-webview'
-import { type MsgFromWebview, type MsgToWebview, type SourceDocument, type ViewingScope, type WktToken } from '@wkt-viewer/shared'
+import { type MsgFromWebview, type MsgToWebview, type SourceDocument, type ViewingCommand, type ViewingScope, type WktToken } from '@wkt-viewer/shared'
 import { GeomObjectsList } from './GeomObjectsList'
 import { GeomObjectsMap } from './GeomObjectsMap'
 import { ViewerHeader } from './ViewerHeader'
@@ -68,7 +68,7 @@ export default function App() {
     const sourceRef = useRef<SourceDocument | null>(null)
     const [scope, setScope] = useState<ViewingScope>({ kind: 'document' })
     const scopeRef = useRef<ViewingScope>({ kind: 'document' })
-    const [captureAvailable, setCaptureAvailable] = useState(false)
+    const [areaLocked, setAreaLocked] = useState(false)
     const [areaLineRange, setAreaLineRange] = useState<{ start: number, end: number }>()
     const [fitId, setFitId] = useState(0)
 
@@ -79,13 +79,17 @@ export default function App() {
                 const nextGeomObjects = wktTokensToGeomObjects(message.wkt)
                 // Keep event handling consistent even if VS Code immediately follows with select.
                 geomObjectsRef.current = nextGeomObjects
+                const preserveSelection = sourceRef.current?.uri === message.source.uri
+                    && sourceRef.current.version === message.source.version
                 sourceRef.current = message.source
                 scopeRef.current = message.scope
                 setGeomObjects(nextGeomObjects)
-                setSelectedId(null)
+                setSelectedId(selectedId => preserveSelection && nextGeomObjects.some(object => object.id === selectedId)
+                    ? selectedId
+                    : null)
                 setSource(message.source)
                 setScope(message.scope)
-                setCaptureAvailable(message.captureAvailable)
+                setAreaLocked(message.areaLocked)
                 setAreaLineRange(message.areaLineRange)
                 setFitId(message.fitId)
                 return
@@ -95,7 +99,6 @@ export default function App() {
                 if (sourceRef.current?.uri !== message.source.uri || sourceRef.current.version !== message.source.version) return
                 const selectedObject = findSelectedGeomObject(geomObjectsRef.current, message.start, scopeRef.current)
                 setSelectedId(selectedObject?.id ?? null)
-                setCaptureAvailable(message.captureAvailable)
             }
         }
 
@@ -116,8 +119,8 @@ export default function App() {
         })
     }, [source])
 
-    const sendScopeRequest = useCallback((command: 'captureArea' | 'showDocument' | 'fitAll') => {
-        if (source) postMsgToVscode({ command, source })
+    const sendViewerCommand = useCallback((command: ViewingCommand) => {
+        if (source) postMsgToVscode({ ...command, source })
     }, [source])
 
     return (
@@ -126,9 +129,9 @@ export default function App() {
                 <ViewerHeader
                     source={source}
                     scope={scope}
-                    captureAvailable={captureAvailable}
+                    areaLocked={areaLocked}
                     areaLineRange={areaLineRange}
-                    onCommand={sendScopeRequest}
+                    onCommand={sendViewerCommand}
                 />
                 {scope.kind === 'area' && geomObjects.length === 0 && <p className="empty-area">Inga WKT-geometrier i området</p>}
                 <GeomObjectsList geomObjects={geomObjects} selectedId={selectedId} onSelect={handleSelect} />

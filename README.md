@@ -32,7 +32,11 @@ Supported keys are `id`, `tag`, and `label`. Unknown `key=value` fields are pres
 2. Open a file containing WKT geometries.
 3. Run `Start WKT Viewer` from the command palette.
 
-Use **Aktuellt område** to capture the non-empty primary editor selection, or **Hela dokumentet** to return to the complete file. **Visa alla i bild** fits the geometries in the currently active scope.
+The viewer follows your text selection automatically. Any non-empty primary selection becomes the viewing area after a short pause, even a single character or an individual WKT. Only complete WKT geometries inside it are shown; a selection without any complete WKT produces an empty view.
+
+Clicking the line range marks the whole area in the editor. Clicking inside the area highlights a geometry without changing the area or zoom. Clicking outside returns to the whole document. Clicking a geometry in the viewer selects its source text without changing the area.
+
+The padlock beside the line range freezes the area so that selections and navigation cannot change it. Unlocking takes effect on your next editor selection. Areas and locks are remembered per document until it is closed.
 
 ## Extension Settings
 

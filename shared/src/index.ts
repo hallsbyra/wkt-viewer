@@ -34,7 +34,7 @@ export type MsgToWebview =
         wkt: WktToken[]
         source: SourceDocument
         scope: ViewingScope
-        captureAvailable: boolean
+        areaLocked: boolean
         areaLineRange?: { start: number, end: number }
         fitId: number
     }
@@ -43,12 +43,14 @@ export type MsgToWebview =
         source: SourceDocument
         start: number
         end: number
-        captureAvailable: boolean
     }
+
+export type ViewingCommand =
+    | { command: 'fitAll' }
+    | { command: 'selectArea' }
+    | { command: 'setAreaLocked', locked: boolean }
 
 export type MsgFromWebview =
     | { command: 'ready' }
     | { command: 'select', source: SourceDocument, start: number, end: number }
-    | { command: 'captureArea', source: SourceDocument }
-    | { command: 'showDocument', source: SourceDocument }
-    | { command: 'fitAll', source: SourceDocument }
+    | (ViewingCommand & { source: SourceDocument })

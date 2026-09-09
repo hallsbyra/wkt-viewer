@@ -27,7 +27,7 @@ function updateMessage(wkt: WktToken[]): Extract<MsgToWebview, { command: 'updat
         wkt,
         source,
         scope: { kind: 'document' },
-        captureAvailable: false,
+        areaLocked: false,
         fitId: 0,
     }
 }
@@ -198,63 +198,39 @@ describe('findSelectedGeomObject', () => {
 })
 
 describe('App VS Code integration', () => {
-    it('lets a new selection replace a locked area without switching to the whole document', () => {
+    it('shows the automatic viewing status and sends a lock request', () => {
         const host = document.createElement('div')
         document.body.appendChild(host)
         const root = createRoot(host)
-        const token = { start: 0, end: 10, line: 0, endLine: 0, wkt: 'POINT(1 1)' }
 
         try {
             act(() => root.render(<App />))
             act(() => {
                 window.dispatchEvent(new MessageEvent('message', { data: {
-                    ...updateMessage([token]),
-                    scope: { kind: 'area', start: 0, end: 10 },
-                    areaLineRange: { start: 1, end: 1 },
+                    ...updateMessage([]),
+                    scope: { kind: 'area', start: 10, end: 20 },
+                    areaLocked: false,
+                    areaLineRange: { start: 2, end: 3 },
                 } satisfies MsgToWebview }))
             })
-            const areaButton = host.querySelector<HTMLButtonElement>('[aria-describedby="scope-hint"]')!
-            expect(areaButton.disabled).toBe(true)
-            expect(areaButton.getAttribute('aria-pressed')).toBe('true')
 
-            // A new selection outside the locked area must enable capture without changing scope.
-            act(() => {
-                window.dispatchEvent(new MessageEvent('message', { data: {
-                    command: 'select', source, start: 100, end: 140, captureAvailable: true,
-                } satisfies MsgToWebview }))
-            })
-            expect(areaButton.disabled).toBe(false)
-            expect(areaButton.getAttribute('aria-pressed')).toBe('true')
-            expect(areaButton.title).toContain('Ersätt aktuellt område')
-            act(() => areaButton.click())
-            expect(postedMessages).toEqual([{ command: 'ready' }, { command: 'captureArea', source }])
+            const lockButton = host.querySelector<HTMLButtonElement>('.lock-button')!
+            const scopeButton = host.querySelector<HTMLButtonElement>('.scope-status-button')!
+            expect(lockButton.getAttribute('aria-pressed')).toBe('false')
+            expect(host.querySelector('.scope-status')?.textContent).toBe('Rader 2–3')
+            act(() => scopeButton.click())
+            act(() => lockButton.click())
+            expect(postedMessages).toEqual([
+                { command: 'ready' },
+                { command: 'selectArea', source },
+                { command: 'setAreaLocked', locked: true, source },
+            ])
 
             act(() => {
-                window.dispatchEvent(new MessageEvent('message', { data: {
-                    ...updateMessage([{ ...token, start: 110, end: 120 }]),
-                    scope: { kind: 'area', start: 100, end: 140 },
-                    areaLineRange: { start: 5, end: 8 },
-                    captureAvailable: true,
-                    fitId: 1,
-                } satisfies MsgToWebview }))
+                window.dispatchEvent(new MessageEvent('message', { data: updateMessage([]) }))
             })
-            expect(host.querySelector('.area-lines')?.textContent).toBe('Rader 5–8')
-            expect(host.querySelector('[data-geom-id="0"]')).toBeNull()
-            expect(host.querySelector('[data-geom-id="110"]')).not.toBeNull()
-
-            const fitButton = host.querySelector<HTMLButtonElement>('[aria-label="Visa alla i bild"]')!
-            act(() => fitButton.click())
-            expect(postedMessages[postedMessages.length - 1]).toEqual({ command: 'fitAll', source })
-
-            // Moving the caret does not discard the replacement area.
-            act(() => {
-                window.dispatchEvent(new MessageEvent('message', { data: {
-                    command: 'select', source, start: 200, end: 200, captureAvailable: false,
-                } satisfies MsgToWebview }))
-            })
-            expect(areaButton.disabled).toBe(true)
-            expect(areaButton.getAttribute('aria-pressed')).toBe('true')
-            expect(host.querySelector('.area-lines')?.textContent).toBe('Rader 5–8')
+            expect(host.querySelector('.scope-status')?.textContent).toBe('Hela dokumentet')
+            expect(host.querySelector('.lock-button')).toBeNull()
         } finally {
             act(() => root.unmount())
             host.remove()
@@ -305,6 +281,36 @@ describe('App VS Code integration', () => {
         host.remove()
     })
 
+    it('keeps the selected geometry when the same document updates', () => {
+        const host = document.createElement('div')
+        document.body.appendChild(host)
+        const root = createRoot(host)
+        const wkt = [{ start: 0, end: 10, line: 0, endLine: 0, wkt: 'POINT(1 1)' }]
+
+        try {
+            act(() => root.render(<App />))
+            act(() => {
+                window.dispatchEvent(new MessageEvent('message', { data: updateMessage(wkt) }))
+                window.dispatchEvent(new MessageEvent('message', { data: {
+                    command: 'select', source, start: 0, end: 0,
+                } satisfies MsgToWebview }))
+            })
+            expect(host.querySelector('[data-geom-id="0"]')?.classList.contains('is-selected')).toBe(true)
+
+            act(() => {
+                window.dispatchEvent(new MessageEvent('message', { data: {
+                    ...updateMessage(wkt),
+                    scope: { kind: 'area', start: 0, end: 10 },
+                    areaLineRange: { start: 1, end: 1 },
+                } satisfies MsgToWebview }))
+            })
+            expect(host.querySelector('[data-geom-id="0"]')?.classList.contains('is-selected')).toBe(true)
+        } finally {
+            act(() => root.unmount())
+            host.remove()
+        }
+    })
+
     it('accepts an update and matching selection sent in the same event turn', () => {
         const host = document.createElement('div')
         document.body.appendChild(host)
@@ -318,7 +324,7 @@ describe('App VS Code integration', () => {
             act(() => {
                 window.dispatchEvent(new MessageEvent('message', { data: updateMessage(wkt) }))
                 window.dispatchEvent(new MessageEvent('message', { data: {
-                    command: 'select', source, start: 0, end: 0, captureAvailable: true,
+                    command: 'select', source, start: 0, end: 0,
                 } satisfies MsgToWebview }))
             })
 

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { type MsgFromWebview, type MsgToWebview, type SourceDocument, type ViewingScope } from '@wkt-viewer/shared'
-import { filterTokensForScope, updateScopeForChanges } from './scope.js'
+import { filterTokensForScope } from './scope.js'
+import { ViewingSession } from './viewingSession.js'
 import { extractWkt } from './wkt.js'
 
 export const DEFAULT_MAX_GEOMETRIES = 500
@@ -12,19 +13,31 @@ export function activate(context: vscode.ExtensionContext) {
     let lastTextEditor: vscode.TextEditor | undefined
     let displayedDocumentUri: string | undefined
     let fitId = 0
-    const scopes = new Map<string, ViewingScope>()
+    const selectionVersions = new WeakMap<vscode.TextEditor, number>()
+    const session = new ViewingSession(source => {
+        const editor = currentEditor()
+        if (editor && editor.document.uri.toString() === source.uri && editor.document.version === source.version) {
+            postCurrent(editor.document, true)
+        }
+    })
 
     const currentEditor = () => lastTextEditor ?? vscode.window.activeTextEditor
-    const scopeFor = (document: vscode.TextDocument): ViewingScope =>
-        scopes.get(document.uri.toString()) ?? { kind: 'document' }
+
+    const postSelection = (editor: vscode.TextEditor) => {
+        if (!currentPanel) return
+        const selection = editor.selections[0]
+        postMessageToWebview(currentPanel, {
+            command: 'select',
+            source: sourceFor(editor.document),
+            start: editor.document.offsetAt(selection.start),
+            end: editor.document.offsetAt(selection.end),
+        })
+    }
 
     const postCurrent = (document: vscode.TextDocument, forceFit = false) => {
         if (!currentPanel) return
 
-        const editor = currentEditor()
-        const scope = scopeFor(document)
-        const selection = editor?.document === document ? editor.selections[0] : undefined
-        const captureAvailable = selection !== undefined && !selection.isEmpty
+        const { scope, locked } = session.getView(document.uri.toString())
         const areaLineRange = getAreaLineRange(document, scope)
         const tokens = filterTokensForScope(extractWkt(document.getText()), scope, getMaxGeometries())
 
@@ -33,30 +46,54 @@ export function activate(context: vscode.ExtensionContext) {
             wkt: tokens,
             source: sourceFor(document),
             scope,
-            captureAvailable,
+            areaLocked: locked,
             areaLineRange,
             fitId: forceFit ? ++fitId : fitId,
         })
         displayedDocumentUri = document.uri.toString()
     }
 
+    const handleWebviewMessage = (message: MsgFromWebview) => {
+        const editor = currentEditor()
+        if (!currentPanel || !editor) return
+
+        const source = sourceFor(editor.document)
+        if ('source' in message && !isCurrentSource(message, source)) return
+        session.cancelPendingSelection()
+
+        if (message.command === 'ready') {
+            postCurrent(editor.document, true)
+        } else if (message.command === 'select') {
+            // The resulting Command event highlights the geometry but never follows it.
+            selectTextInEditor(editor, message.start, message.end)
+        } else if (message.command === 'fitAll') {
+            postCurrent(editor.document, true)
+        } else if (message.command === 'selectArea') {
+            const scope = session.getView(source.uri).scope
+            if (scope.kind === 'area') selectTextInEditor(editor, scope.start, scope.end)
+        } else if (message.command === 'setAreaLocked') {
+            session.setAreaLocked(source.uri, message.locked)
+            postCurrent(editor.document)
+        }
+    }
+
     context.subscriptions.push(
+        session,
         vscode.workspace.onDidChangeTextDocument(event => {
             const key = event.document.uri.toString()
-            const previousScope = scopes.get(key)
-            if (previousScope) {
-                scopes.set(key, updateScopeForChanges(previousScope, event.contentChanges))
-            }
+            session.updateDocument(key, event.contentChanges)
 
             if (currentPanel && currentEditor()?.document === event.document) {
                 postCurrent(event.document)
             }
         }),
-        vscode.workspace.onDidCloseTextDocument(document => scopes.delete(document.uri.toString())),
+        vscode.workspace.onDidCloseTextDocument(document => session.closeDocument(document.uri.toString())),
         vscode.window.onDidChangeActiveTextEditor(editor => {
+            session.cancelPendingSelection()
             if (!currentPanel || !editor) return
 
             lastTextEditor = editor
+            selectionVersions.set(editor, editor.document.version)
             const changedDocument = displayedDocumentUri !== editor.document.uri.toString()
             postCurrent(editor.document, changedDocument)
         }),
@@ -66,13 +103,13 @@ export function activate(context: vscode.ExtensionContext) {
             lastTextEditor = event.textEditor
             const selection = event.selections[0]
             const document = event.textEditor.document
-            postMessageToWebview(currentPanel, {
-                command: 'select',
-                source: sourceFor(document),
-                start: document.offsetAt(selection.start),
-                end: document.offsetAt(selection.end),
-                captureAvailable: !selection.isEmpty,
-            })
+            const documentChanged = selectionVersions.get(event.textEditor) !== document.version
+            selectionVersions.set(event.textEditor, document.version)
+            // Typing and arrow-key navigation move an empty selection without choosing an area.
+            const userInitiated = event.kind === vscode.TextEditorSelectionChangeKind.Mouse
+                || (event.kind === vscode.TextEditorSelectionChangeKind.Keyboard && !selection.isEmpty && !documentChanged)
+            session.selectionChanged(sourceFor(document), document.offsetAt(selection.start), document.offsetAt(selection.end), userInitiated)
+            postSelection(event.textEditor)
         }),
         vscode.workspace.onDidChangeConfiguration(event => {
             if (!event.affectsConfiguration(`${SETTINGS_SECTION}.${MAX_GEOMETRIES_SETTING}`)) return
@@ -87,6 +124,15 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             lastTextEditor = vscode.window.activeTextEditor
+            if (lastTextEditor) {
+                selectionVersions.set(lastTextEditor, lastTextEditor.document.version)
+                const selection = lastTextEditor.selections[0]
+                session.initializeFromSelection(
+                    sourceFor(lastTextEditor.document),
+                    lastTextEditor.document.offsetAt(selection.start),
+                    lastTextEditor.document.offsetAt(selection.end),
+                )
+            }
             const targetColumn = lastTextEditor?.viewColumn !== undefined
                 ? lastTextEditor.viewColumn + 1
                 : vscode.ViewColumn.Beside
@@ -96,49 +142,14 @@ export function activate(context: vscode.ExtensionContext) {
             })
 
             setWebviewContent(currentPanel, context)
-            currentPanel.webview.onDidReceiveMessage(message => {
-                handleWebviewMessage(message, currentPanel, currentEditor(), scopes, postCurrent)
-            }, undefined, context.subscriptions)
+            currentPanel.webview.onDidReceiveMessage(handleWebviewMessage, undefined, context.subscriptions)
             currentPanel.onDidDispose(() => {
+                session.cancelPendingSelection()
                 currentPanel = undefined
                 displayedDocumentUri = undefined
             }, null, context.subscriptions)
         })
     )
-}
-
-function handleWebviewMessage(
-    message: MsgFromWebview,
-    panel: vscode.WebviewPanel | undefined,
-    editor: vscode.TextEditor | undefined,
-    scopes: Map<string, ViewingScope>,
-    postCurrent: (document: vscode.TextDocument, forceFit?: boolean) => void,
-) {
-    if (!panel || !editor) return
-
-    const source = sourceFor(editor.document)
-    if ('source' in message && !isCurrentSource(message, source)) return
-
-    if (message.command === 'ready') {
-        postCurrent(editor.document, true)
-    } else if (message.command === 'select') {
-        selectTextInEditor(editor, message.start, message.end)
-    } else if (message.command === 'captureArea') {
-        const selection = editor.selections[0]
-        if (selection.isEmpty) return
-
-        scopes.set(source.uri, {
-            kind: 'area',
-            start: editor.document.offsetAt(selection.start),
-            end: editor.document.offsetAt(selection.end),
-        })
-        postCurrent(editor.document, true)
-    } else if (message.command === 'showDocument') {
-        scopes.delete(source.uri)
-        postCurrent(editor.document, true)
-    } else if (message.command === 'fitAll') {
-        postCurrent(editor.document, true)
-    }
 }
 
 function sourceFor(document: vscode.TextDocument): SourceDocument {
@@ -164,9 +175,7 @@ function getAreaLineRange(document: vscode.TextDocument, scope: ViewingScope) {
 }
 
 function setWebviewContent(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
-    const isDevelopment = process.env.VSCODE_DEBUG === 'true'
-        || process.env.NODE_ENV === 'development'
-        || context.extensionMode === vscode.ExtensionMode.Development
+    const isDevelopment = context.extensionMode === vscode.ExtensionMode.Development
 
     if (isDevelopment) {
         panel.webview.html = getDevWebviewContent()
