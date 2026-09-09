@@ -9,7 +9,6 @@
 			"command": "npm run watch",
 			"isBackground": true,
 			"problemMatcher": "$tsc-watch",
-			"group": "build",
 		},
 		{
 			"label": "Vite Dev",
@@ -23,11 +22,10 @@
 				"pattern": { "regexp": ".*" },
 				"background": {
 					"activeOnStart": true,
-					"beginsPattern": ".*VITE v.*ready in.*ms.*",
-					"endsPattern": ".*VITE v.*ready in.*ms.*"
+					"beginsPattern": ".*VITE v.*",
+					"endsPattern": ".*Local:.*"
 				}
-			},
-			"group": "build"
+			}
 		},
 		{
 			"label": "Start Dev Env",

@@ -54,7 +54,7 @@ npm test
 
 ### Running the Extension
 
-- <kbd>F5</kbd>: Launch the extension in an Extension Development Host.
+- <kbd>F5</kbd>: Launch the extension in an Extension Development Host. The first start starts TypeScript watch mode and the Vite dev server; later starts reuse them.
 - <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> -> **Start Dev Env**: Start TypeScript watch mode and the Vite dev server.
 
 ### Debugging

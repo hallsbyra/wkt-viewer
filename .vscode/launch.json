@@ -10,12 +10,15 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
+				"--disable-extensions",
+				"--user-data-dir=${env:TEMP}\\wkt-viewer-extension-host",
+				"--extensions-dir=${env:TEMP}\\wkt-viewer-extension-host-extensions",
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
 			"outFiles": [
 				"${workspaceFolder}/extension/dist/**/*.js"
 			],
-			"preLaunchTask": "${defaultBuildTask}"
+			"preLaunchTask": "Start Dev Env"
 		},
 	]
 }
