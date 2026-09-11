@@ -1,5 +1,6 @@
+import * as LL from 'leaflet'
 import { describe, expect, it } from 'vitest'
-import { getDirectionMarkerInfo } from './DirectionMarker'
+import { getDirectionMarkerInfo, getVisibleDirectionMarkerInfo, limitDirectionMarkerInfo, MAX_DIRECTION_MARKERS } from './DirectionMarker'
 
 // Helper to round numbers for stable assertions
 function round(n: number, d = 6) { return Math.round(n * 10 ** d) / 10 ** d }
@@ -108,5 +109,40 @@ describe('getDirectionMarkerInfo', () => {
         expect(info).toContainEqual({ pos: [11, 10], angleDeg: 0 })
         expect(info).toContainEqual({ pos: [20.5, 20], angleDeg: 0 })
         expect(info).toContainEqual({ pos: [30, 30.5], angleDeg: 90 })
+    })
+})
+
+describe('limitDirectionMarkerInfo', () => {
+    it('keeps every marker when the geometry has at most the limit', () => {
+        const markers = Array.from({ length: MAX_DIRECTION_MARKERS }, (_, index) => ({ pos: [index, 0] as [number, number], angleDeg: 0 }))
+
+        expect(limitDirectionMarkerInfo(markers)).toBe(markers)
+    })
+
+    it('spreads the limit across a detailed geometry, including both ends', () => {
+        const markers = Array.from({ length: MAX_DIRECTION_MARKERS + 1 }, (_, index) => ({ pos: [index, 0] as [number, number], angleDeg: index }))
+
+        const limited = limitDirectionMarkerInfo(markers)
+
+        expect(limited).toHaveLength(MAX_DIRECTION_MARKERS)
+        expect(limited[0]).toBe(markers[0])
+        expect(limited[limited.length - 1]).toBe(markers[markers.length - 1])
+        const selectedIndexes = limited.map(marker => marker.pos[0])
+        expect(new Set(selectedIndexes)).toHaveLength(MAX_DIRECTION_MARKERS)
+        expect(Math.max(...selectedIndexes.slice(1).map((index, i) => index - selectedIndexes[i]))).toBeLessThanOrEqual(2)
+    })
+})
+
+describe('getVisibleDirectionMarkerInfo', () => {
+    it('keeps only segment midpoints inside the current map bounds', () => {
+        const markers = [
+            { pos: [-1, 0] as [number, number], angleDeg: 0 },
+            { pos: [1, 1] as [number, number], angleDeg: 45 },
+            { pos: [3, 0] as [number, number], angleDeg: 0 },
+        ]
+
+        const visible = getVisibleDirectionMarkerInfo(markers, LL.latLngBounds([0, 0], [2, 2]))
+
+        expect(visible).toEqual([markers[1]])
     })
 })

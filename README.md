@@ -70,6 +70,7 @@ Use these types:
 
 - `feat:` user-visible features. Shown in the changelog and bumps the minor version.
 - `fix:` user-visible bug fixes. Shown in the changelog and bumps the patch version.
+- `perf:` user-visible performance improvements. Shown in the changelog and bumps the patch version.
 - `deps:` dependency updates worth mentioning. Shown in the changelog.
 - `docs:`, `test:`, `refactor:`, `build:`, `chore:` internal changes. Hidden from the changelog.
 

@@ -54,6 +54,13 @@ vi.mock('react-leaflet', async () => {
             fitBounds: () => undefined,
             getContainer: () => document.createElement('div'),
             panBy: () => undefined,
+            getBounds: () => ({
+                contains: () => true,
+                toBBoxString: () => '0,0,1,1',
+            }),
+            getZoom: () => 0,
+            on: () => undefined,
+            off: () => undefined,
         }),
     }
 })

@@ -4,6 +4,7 @@ import { COLOR } from './styles'
 
 const ARROW_SIZE_PX = 14
 const ARROW_COLOR = COLOR.selectedStroke
+export const MAX_DIRECTION_MARKERS = 200
 
 /**
  * Component for a direction marker (arrow) at a given latlng and angle.
@@ -20,7 +21,7 @@ export function DirectionMarker({ latlng, angleDeg }: { latlng: [number, number]
 }
 
 type Pos = [number, number]
-type DirectionMarkerInfo = { pos: Pos, angleDeg: number }
+export type DirectionMarkerInfo = { pos: Pos, angleDeg: number }
 
 /**
  * Calculate positions and angles for direction markers along a geometry.
@@ -62,10 +63,29 @@ export function getDirectionMarkerInfo(geom: GeoJSON.Geometry): DirectionMarkerI
 }
 
 /**
+ * Keep direction markers useful without creating one DOM marker per segment
+ * for very detailed geometries. The first and last segment are always shown.
+ */
+export function limitDirectionMarkerInfo(markers: DirectionMarkerInfo[]): DirectionMarkerInfo[] {
+    if (markers.length <= MAX_DIRECTION_MARKERS) return markers
+
+    return Array.from({ length: MAX_DIRECTION_MARKERS }, (_, index) =>
+        markers[Math.round(index * (markers.length - 1) / (MAX_DIRECTION_MARKERS - 1))],
+    )
+}
+
+/**
+ * Keep only markers whose segment midpoint is currently visible on the map.
+ */
+export function getVisibleDirectionMarkerInfo(markers: DirectionMarkerInfo[], bounds: LL.LatLngBounds): DirectionMarkerInfo[] {
+    return markers.filter(marker => bounds.contains([marker.pos[1], marker.pos[0]]))
+}
+
+/**
  * Helper for creating direction markers for a geometry.
  */
-export function getDirectionMarkers(geom: GeoJSON.Geometry) {
-    const markers = getDirectionMarkerInfo(geom)
+export function getDirectionMarkers(geom: GeoJSON.Geometry, bounds: LL.LatLngBounds) {
+    const markers = limitDirectionMarkerInfo(getVisibleDirectionMarkerInfo(getDirectionMarkerInfo(geom), bounds))
     return markers.map((a, i) => (<DirectionMarker key={i} latlng={[a.pos[1], a.pos[0]]} angleDeg={a.angleDeg} />))
 }
 

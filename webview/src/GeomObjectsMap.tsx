@@ -1,5 +1,5 @@
 import * as LL from 'leaflet'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as RL from 'react-leaflet'
 import { GeomObject } from './App'
 import { getAnnotationEntries, getTagColor } from './annotation'
@@ -77,11 +77,9 @@ export function GeomObjectsMap({
         bindMetadataTooltip(geomObj, layer)
     }
 
-    const directionMarkers = useMemo(() => {
-        if (selectedId == null) return []
-        const sel = geomObjects.find(g => g.id === selectedId)
-        if (!sel) return []
-        return getDirectionMarkers(sel.feature.geometry)
+    const selectedGeometry = useMemo(() => {
+        if (selectedId == null) return null
+        return geomObjects.find(geom => geom.id === selectedId)?.feature.geometry ?? null
     }, [selectedId, geomObjects])
 
     useMiddleButtonPanning(map)
@@ -97,9 +95,41 @@ export function GeomObjectsMap({
                     pointToLayer={(_feature, latlng) => createPointMarker(geomObj, latlng)}
                 />
             ))}
-            {directionMarkers}
+            {selectedGeometry && <VisibleDirectionMarkers geometry={selectedGeometry} />}
         </>
     )
+}
+
+function VisibleDirectionMarkers({ geometry }: { geometry: GeoJSON.Geometry }) {
+    const map = RL.useMap()
+    const [viewKey, setViewKey] = useState(() => getMapViewKey(map))
+    const latestViewKey = useRef(viewKey)
+
+    useEffect(() => {
+        const updateView = () => {
+            const nextViewKey = getMapViewKey(map)
+            if (nextViewKey === latestViewKey.current) return
+
+            latestViewKey.current = nextViewKey
+            setViewKey(nextViewKey)
+        }
+
+        map.on('moveend zoomend resize', updateView)
+        return () => {
+            map.off('moveend zoomend resize', updateView)
+        }
+    }, [map])
+
+    const markers = useMemo(
+        () => getDirectionMarkers(geometry, map.getBounds()),
+        [geometry, map, viewKey],
+    )
+
+    return <>{markers}</>
+}
+
+function getMapViewKey(map: LL.Map) {
+    return `${map.getZoom()}:${map.getBounds().toBBoxString()}`
 }
 
 function bindMetadataTooltip(geomObj: GeomObject, layer: LL.Layer) {
