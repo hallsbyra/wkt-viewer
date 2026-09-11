@@ -4,6 +4,13 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.7.1](https://github.com/hallsbyra/wkt-viewer/compare/v0.7.0...v0.7.1) (2026-09-11)
+
+
+### ⚡ Performance
+
+* limit direction markers to visible map area ([ebbf32a](https://github.com/hallsbyra/wkt-viewer/commit/ebbf32a115703e27284f554024275656f6b07961))
+
 ## [0.7.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.6.0...v0.7.0) (2026-09-09)
 
 
