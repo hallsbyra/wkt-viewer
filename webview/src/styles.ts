@@ -26,4 +26,4 @@ export const DEFAULT_PATH_STYLE: LL.PathOptions = {
 }
 
 export const POINT_RADIUS = 6
-export const POINT_RADIUS_SELECTED = 7
+export const POINT_RADIUS_SELECTED = 10

@@ -1,7 +1,7 @@
 import * as LL from 'leaflet'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as RL from 'react-leaflet'
-import { GeomObject } from './App'
+import { type GeomObject } from './App'
 import { getAnnotationEntries, getTagColor } from './annotation'
 import { getDirectionMarkers } from './DirectionMarker'
 import { calculateBoundingBox } from './geojson-util'
@@ -43,30 +43,9 @@ export function GeomObjectsMap({
         hasFittedCurrentScope.current = true
     }, [bounds, fitId, map])
 
-    // Style function
-    function styleFn(geomObj: GeomObject): LL.PathOptions {
-        const tagColor = getTagColor(geomObj.token.annotation?.tag)
-        if (!tagColor) {
-            return geomObj.id === selectedId ? SELECTED_PATH_STYLE : DEFAULT_PATH_STYLE
-        }
-
-        return {
-            ...DEFAULT_PATH_STYLE,
-            color: tagColor,
-            fillColor: tagColor,
-            weight: geomObj.id === selectedId ? 4 : DEFAULT_PATH_STYLE.weight,
-            opacity: geomObj.id === selectedId ? 1 : DEFAULT_PATH_STYLE.opacity,
-            fillOpacity: geomObj.id === selectedId ? 0.45 : DEFAULT_PATH_STYLE.fillOpacity,
-        }
-    }
-
-    // Create marker for POINT geometries
+    // Create marker for POINT geometries.
     function createPointMarker(geomObj: GeomObject, latlng: LL.LatLng) {
-        const pathStyle = styleFn(geomObj)
-        return LL.circleMarker(latlng, {
-            radius: geomObj.id === selectedId ? POINT_RADIUS_SELECTED : POINT_RADIUS,
-            ...pathStyle,
-        })
+        return LL.circleMarker(latlng, getGeometryStyle(geomObj, selectedId))
     }
 
     const handleFeatureClick = (geomObj: GeomObject) => (_feature: GeoJSON.Feature, layer: LL.Layer) => {
@@ -91,13 +70,33 @@ export function GeomObjectsMap({
                     key={`${geomObj.id}:${geomObj.token.end}:${geomObj.token.wkt}`}
                     data={geomObj.feature}
                     onEachFeature={handleFeatureClick(geomObj)}
-                    style={() => styleFn(geomObj)}
+                    style={() => getGeometryStyle(geomObj, selectedId)}
                     pointToLayer={(_feature, latlng) => createPointMarker(geomObj, latlng)}
                 />
             ))}
             {selectedGeometry && <VisibleDirectionMarkers geometry={selectedGeometry} />}
         </>
     )
+}
+
+/**
+ * The selected style deliberately takes precedence over a tag color so the
+ * current geometry remains identifiable on dense maps.
+ *
+ * CircleMarker also reads radius from setStyle, which lets selection resize
+ * POINT geometries after they have been created.
+ */
+export function getGeometryStyle(geomObj: GeomObject, selectedId?: number | null): LL.CircleMarkerOptions {
+    if (geomObj.id === selectedId) {
+        return { ...SELECTED_PATH_STYLE, radius: POINT_RADIUS_SELECTED }
+    }
+
+    const tagColor = getTagColor(geomObj.token.annotation?.tag)
+    return {
+        ...DEFAULT_PATH_STYLE,
+        radius: POINT_RADIUS,
+        ...(tagColor && { color: tagColor, fillColor: tagColor }),
+    }
 }
 
 function VisibleDirectionMarkers({ geometry }: { geometry: GeoJSON.Geometry }) {
