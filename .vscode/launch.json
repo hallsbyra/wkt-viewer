@@ -9,8 +9,11 @@
 			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",
+			"runtimeExecutable": "${execPath}",
 			"args": [
+				"--new-window",
 				"--disable-extensions",
+				"--disable-extension=GitHub.copilot-chat",
 				"--user-data-dir=${env:TEMP}\\wkt-viewer-extension-host",
 				"--extensions-dir=${env:TEMP}\\wkt-viewer-extension-host-extensions",
 				"--extensionDevelopmentPath=${workspaceFolder}"
