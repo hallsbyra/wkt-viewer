@@ -1,7 +1,7 @@
 import * as LL from 'leaflet'
 import { describe, expect, it, vi } from 'vitest'
 import { type GeomObject } from './App'
-import { focusGeometryIfOutsideView, getGeometryStyle } from './GeomObjectsMap'
+import { fitGeometry, focusGeometryIfOutsideView, getGeometryStyle } from './GeomObjectsMap'
 import { COLOR, POINT_RADIUS, POINT_RADIUS_SELECTED } from './styles'
 
 const taggedPoint: GeomObject = {
@@ -82,6 +82,17 @@ describe('focusGeometryIfOutsideView', () => {
 
         expect(map.fitBounds).not.toHaveBeenCalled()
         expect(map.panTo).not.toHaveBeenCalled()
+    })
+
+    it('fits a shape even when it is already partly visible', () => {
+        const map = createMap()
+
+        fitGeometry(map, {
+            type: 'LineString',
+            coordinates: [[5, 5], [20, 20]],
+        })
+
+        expect(map.fitBounds).toHaveBeenCalledOnce()
     })
 
     it('pans to an off-screen point without trying to fit zero-size bounds', () => {

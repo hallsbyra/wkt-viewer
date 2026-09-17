@@ -13,12 +13,14 @@ export function GeomObjectsMap({
     onSelect,
     fitId,
     listFocusId,
+    listFitId,
 }: {
     geomObjects: GeomObject[]
     selectedId?: number | null
     onSelect?: (obj: GeomObject) => void
     fitId: number
     listFocusId: number
+    listFitId: number
 }) {
     const map = RL.useMap()
     const bounds = useMemo(
@@ -28,6 +30,8 @@ export function GeomObjectsMap({
     const latestObjects = useRef(geomObjects)
     const latestOnSelect = useRef(onSelect)
     const lastFitId = useRef<number | null>(null)
+    const lastListFocusId = useRef(0)
+    const lastListFitId = useRef(0)
     const hasFittedCurrentScope = useRef(false)
     latestObjects.current = geomObjects
     latestOnSelect.current = onSelect
@@ -46,11 +50,20 @@ export function GeomObjectsMap({
     }, [bounds, fitId, map])
 
     useEffect(() => {
-        if (listFocusId === 0) return
+        if (listFocusId === lastListFocusId.current) return
+        lastListFocusId.current = listFocusId
 
         const selectedGeometry = geomObjects.find(object => object.id === selectedId)?.feature.geometry
         if (selectedGeometry) focusGeometryIfOutsideView(map, selectedGeometry)
     }, [geomObjects, listFocusId, map, selectedId])
+
+    useEffect(() => {
+        if (listFitId === lastListFitId.current) return
+        lastListFitId.current = listFitId
+
+        const selectedGeometry = geomObjects.find(object => object.id === selectedId)?.feature.geometry
+        if (selectedGeometry) fitGeometry(map, selectedGeometry)
+    }, [geomObjects, listFitId, map, selectedId])
 
     // Create marker for POINT geometries.
     function createPointMarker(geomObj: GeomObject, latlng: LL.LatLng) {
@@ -110,17 +123,29 @@ export function getGeometryStyle(geomObj: GeomObject, selectedId?: number | null
 
 /** Move to a geometry chosen in the list only when it is off screen. */
 export function focusGeometryIfOutsideView(map: LL.Map, geometry: GeoJSON.Geometry) {
-    const coordinates = calculateBoundingBox([geometry])
-    if (!coordinates) return
-
-    const targetBounds = LL.latLngBounds(coordinates)
+    const targetBounds = geometryBounds(geometry)
+    if (!targetBounds) return
     if (map.getBounds().intersects(targetBounds)) return
 
+    fitGeometryBounds(map, targetBounds)
+}
+
+/** Adapt the map to show a geometry in its entirety. */
+export function fitGeometry(map: LL.Map, geometry: GeoJSON.Geometry) {
+    const targetBounds = geometryBounds(geometry)
+    if (targetBounds) fitGeometryBounds(map, targetBounds)
+}
+
+function geometryBounds(geometry: GeoJSON.Geometry) {
+    const coordinates = calculateBoundingBox([geometry])
+    return coordinates && LL.latLngBounds(coordinates)
+}
+
+function fitGeometryBounds(map: LL.Map, targetBounds: LL.LatLngBounds) {
     if (targetBounds.getNorthWest().equals(targetBounds.getSouthEast())) {
         map.panTo(targetBounds.getCenter())
         return
     }
-
     map.fitBounds(targetBounds, { padding: [10, 10] })
 }
 

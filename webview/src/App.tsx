@@ -72,6 +72,7 @@ export default function App() {
     const [areaLineRange, setAreaLineRange] = useState<{ start: number, end: number }>()
     const [fitId, setFitId] = useState(0)
     const [listFocusId, setListFocusId] = useState(0)
+    const [listFitId, setListFitId] = useState(0)
 
     useEffect(() => {
         const onMessage = (event: MessageEvent<MsgToWebview>) => {
@@ -125,6 +126,11 @@ export default function App() {
         setListFocusId(id => id + 1)
     }, [handleSelect])
 
+    const handleListFit = useCallback((object: GeomObject) => {
+        handleSelect(object)
+        setListFitId(id => id + 1)
+    }, [handleSelect])
+
     const sendViewerCommand = useCallback((command: ViewingCommand) => {
         if (source) postMsgToVscode({ ...command, source })
     }, [source])
@@ -140,7 +146,12 @@ export default function App() {
                     onCommand={sendViewerCommand}
                 />
                 {scope.kind === 'area' && geomObjects.length === 0 && <p className="empty-area">Inga WKT-geometrier i området</p>}
-                <GeomObjectsList geomObjects={geomObjects} selectedId={selectedId} onSelect={handleListSelect} />
+                <GeomObjectsList
+                    geomObjects={geomObjects}
+                    selectedId={selectedId}
+                    onSelect={handleListSelect}
+                    onFit={handleListFit}
+                />
             </aside>
             <div className="map-container">
                 <MapContainer
@@ -155,6 +166,7 @@ export default function App() {
                         onSelect={handleSelect}
                         fitId={fitId}
                         listFocusId={listFocusId}
+                        listFitId={listFitId}
                     />
                 </MapContainer>
             </div>

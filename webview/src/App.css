@@ -158,6 +158,22 @@ body {
     border-color: var(--vscode-focusBorder, #007acc);
 }
 
+.sidebar .geometry-fit-button {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--vscode-descriptionForeground, #616773);
+}
+
+.geometry-fit-button:hover {
+    background: var(--vscode-toolbar-hoverBackground, #e5e8ed);
+    color: inherit;
+}
+
 .geometry-details {
     color: var(--vscode-descriptionForeground, #616773);
 }

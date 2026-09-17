@@ -6,10 +6,12 @@ export function GeomObjectsList({
     geomObjects,
     selectedId,
     onSelect,
+    onFit,
 }: {
     geomObjects: GeomObject[]
     selectedId?: number | null
     onSelect?: (obj: GeomObject) => void
+    onFit?: (obj: GeomObject) => void
 }) {
     const listContainerRef = useRef<HTMLUListElement | null>(null)
     const [query, setQuery] = useState('')
@@ -51,6 +53,7 @@ export function GeomObjectsList({
                             data-geom-id={obj.id}
                             title={title}
                             onClick={() => onSelect && onSelect(obj)}
+                            onDoubleClick={() => onFit?.(obj)}
                         >
 
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -67,9 +70,21 @@ export function GeomObjectsList({
                                             }}
                                         />
                                     )}
-                                    <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    <div style={{ flex: 1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {annotation?.label ?? annotation?.id ?? `#${originalIndex + 1}`}
                                     </div>
+                                    <button
+                                        type="button"
+                                        className="geometry-fit-button"
+                                        aria-label={`Visa hela geometrin ${annotation?.label ?? annotation?.id ?? originalIndex + 1}`}
+                                        title="Visa hela geometrin"
+                                        onClick={event => {
+                                            event.stopPropagation()
+                                            onFit?.(obj)
+                                        }}
+                                    >
+                                        <FitIcon />
+                                    </button>
                                 </div>
                                 {annotation?.id && (
                                     <div className="geometry-details" style={{ fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all' }}>
@@ -89,5 +104,13 @@ export function GeomObjectsList({
                 })}
             </ul>
         </div>
+    )
+}
+
+function FitIcon() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M6 2H2v4m8-4h4v4m0 4v4h-4m-4 0H2v-4M6 8h4M8 6v4" />
+        </svg>
     )
 }

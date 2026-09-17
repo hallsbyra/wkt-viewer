@@ -9,6 +9,20 @@ testGlobal.IS_REACT_ACT_ENVIRONMENT = true
 
 const reactLeafletMock = vi.hoisted(() => ({
     mapContainerProps: [] as Array<Record<string, unknown>>,
+    map: {
+        fitBounds: vi.fn(),
+        getContainer: () => document.createElement('div'),
+        panBy: vi.fn(),
+        panTo: vi.fn(),
+        getBounds: () => ({
+            contains: () => true,
+            intersects: () => true,
+            toBBoxString: () => '0,0,1,1',
+        }),
+        getZoom: () => 0,
+        on: vi.fn(),
+        off: vi.fn(),
+    },
 }))
 
 const postedMessages: MsgFromWebview[] = []
@@ -39,6 +53,7 @@ beforeEach(() => {
     postedMessages.length = 0
     vscodeApiMock.postMessage.mockClear()
     reactLeafletMock.mapContainerProps.length = 0
+    reactLeafletMock.map.fitBounds.mockClear()
 })
 
 vi.mock('react-leaflet', async () => {
@@ -50,18 +65,7 @@ vi.mock('react-leaflet', async () => {
         },
         GeoJSON: () => null,
         Marker: () => null,
-        useMap: () => ({
-            fitBounds: () => undefined,
-            getContainer: () => document.createElement('div'),
-            panBy: () => undefined,
-            getBounds: () => ({
-                contains: () => true,
-                toBBoxString: () => '0,0,1,1',
-            }),
-            getZoom: () => 0,
-            on: () => undefined,
-            off: () => undefined,
-        }),
+        useMap: () => reactLeafletMock.map,
     }
 })
 
@@ -337,6 +341,35 @@ describe('App VS Code integration', () => {
 
             const row = host.querySelector<HTMLElement>('[data-geom-id="0"]')
             expect(row?.classList.contains('is-selected')).toBe(true)
+        } finally {
+            act(() => root.unmount())
+            host.remove()
+        }
+    })
+
+    it('does not reuse an explicit list zoom for a later single click', () => {
+        const host = document.createElement('div')
+        document.body.appendChild(host)
+        const root = createRoot(host)
+        const wkt = [
+            { start: 0, end: 21, line: 0, endLine: 0, wkt: 'LINESTRING(1 1,2 2)' },
+            { start: 22, end: 43, line: 1, endLine: 1, wkt: 'LINESTRING(3 3,4 4)' },
+        ]
+
+        try {
+            act(() => root.render(<App />))
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: updateMessage(wkt) })))
+            reactLeafletMock.map.fitBounds.mockClear()
+
+            const firstRow = host.querySelector<HTMLElement>('[data-geom-id="0"]')!
+            const firstFitButton = firstRow.querySelector<HTMLButtonElement>('.geometry-fit-button')!
+            act(() => firstFitButton.click())
+            expect(reactLeafletMock.map.fitBounds).toHaveBeenCalledOnce()
+            reactLeafletMock.map.fitBounds.mockClear()
+
+            const secondRow = host.querySelector<HTMLElement>('[data-geom-id="22"]')!
+            act(() => secondRow.click())
+            expect(reactLeafletMock.map.fitBounds).not.toHaveBeenCalled()
         } finally {
             act(() => root.unmount())
             host.remove()
