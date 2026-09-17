@@ -12,11 +12,13 @@ export function GeomObjectsMap({
     selectedId,
     onSelect,
     fitId,
+    listFocusId,
 }: {
     geomObjects: GeomObject[]
     selectedId?: number | null
     onSelect?: (obj: GeomObject) => void
     fitId: number
+    listFocusId: number
 }) {
     const map = RL.useMap()
     const bounds = useMemo(
@@ -42,6 +44,13 @@ export function GeomObjectsMap({
         map.fitBounds(bounds, { padding: [10, 10] })
         hasFittedCurrentScope.current = true
     }, [bounds, fitId, map])
+
+    useEffect(() => {
+        if (listFocusId === 0) return
+
+        const selectedGeometry = geomObjects.find(object => object.id === selectedId)?.feature.geometry
+        if (selectedGeometry) focusGeometryIfOutsideView(map, selectedGeometry)
+    }, [geomObjects, listFocusId, map, selectedId])
 
     // Create marker for POINT geometries.
     function createPointMarker(geomObj: GeomObject, latlng: LL.LatLng) {
@@ -97,6 +106,22 @@ export function getGeometryStyle(geomObj: GeomObject, selectedId?: number | null
         radius: POINT_RADIUS,
         ...(tagColor && { color: tagColor, fillColor: tagColor }),
     }
+}
+
+/** Move to a geometry chosen in the list only when it is off screen. */
+export function focusGeometryIfOutsideView(map: LL.Map, geometry: GeoJSON.Geometry) {
+    const coordinates = calculateBoundingBox([geometry])
+    if (!coordinates) return
+
+    const targetBounds = LL.latLngBounds(coordinates)
+    if (map.getBounds().intersects(targetBounds)) return
+
+    if (targetBounds.getNorthWest().equals(targetBounds.getSouthEast())) {
+        map.panTo(targetBounds.getCenter())
+        return
+    }
+
+    map.fitBounds(targetBounds, { padding: [10, 10] })
 }
 
 function VisibleDirectionMarkers({ geometry }: { geometry: GeoJSON.Geometry }) {

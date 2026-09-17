@@ -71,6 +71,7 @@ export default function App() {
     const [areaLocked, setAreaLocked] = useState(false)
     const [areaLineRange, setAreaLineRange] = useState<{ start: number, end: number }>()
     const [fitId, setFitId] = useState(0)
+    const [listFocusId, setListFocusId] = useState(0)
 
     useEffect(() => {
         const onMessage = (event: MessageEvent<MsgToWebview>) => {
@@ -119,6 +120,11 @@ export default function App() {
         })
     }, [source])
 
+    const handleListSelect = useCallback((object: GeomObject) => {
+        handleSelect(object)
+        setListFocusId(id => id + 1)
+    }, [handleSelect])
+
     const sendViewerCommand = useCallback((command: ViewingCommand) => {
         if (source) postMsgToVscode({ ...command, source })
     }, [source])
@@ -134,7 +140,7 @@ export default function App() {
                     onCommand={sendViewerCommand}
                 />
                 {scope.kind === 'area' && geomObjects.length === 0 && <p className="empty-area">Inga WKT-geometrier i området</p>}
-                <GeomObjectsList geomObjects={geomObjects} selectedId={selectedId} onSelect={handleSelect} />
+                <GeomObjectsList geomObjects={geomObjects} selectedId={selectedId} onSelect={handleListSelect} />
             </aside>
             <div className="map-container">
                 <MapContainer
@@ -143,7 +149,13 @@ export default function App() {
                     minZoom={MAP_MIN_ZOOM}
                     maxBounds={[[-Infinity, -Infinity], [Infinity, Infinity]]}
                 >
-                    <GeomObjectsMap geomObjects={geomObjects} selectedId={selectedId} onSelect={handleSelect} fitId={fitId} />
+                    <GeomObjectsMap
+                        geomObjects={geomObjects}
+                        selectedId={selectedId}
+                        onSelect={handleSelect}
+                        fitId={fitId}
+                        listFocusId={listFocusId}
+                    />
                 </MapContainer>
             </div>
         </div>
