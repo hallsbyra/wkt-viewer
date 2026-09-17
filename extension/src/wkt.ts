@@ -171,13 +171,38 @@ function parseAwktFields(body: string): Record<string, string> | null {
     if (body.length === 0) return null
 
     const fields: Record<string, string> = {}
-    for (const part of body.split(/\s+/)) {
-        const eq = part.indexOf('=')
-        if (eq <= 0 || eq === part.length - 1) return null
+    let i = 0
 
-        const key = part.slice(0, eq)
-        const value = part.slice(eq + 1)
+    while (i < body.length) {
+        while (i < body.length && /\s/.test(body[i])) i++
+        if (i === body.length) break
+
+        const keyStart = i
+        while (i < body.length && body[i] !== '=' && !/\s/.test(body[i])) i++
+        const key = body.slice(keyStart, i)
         if (!ANNOTATION_KEY_PATTERN.test(key)) return null
+
+        if (body[i] !== '=') return null
+        i++
+        if (i === body.length) return null
+
+        let value: string
+        const quote = body[i]
+        if (quote === '"' || quote === '\'') {
+            i++
+            const valueStart = i
+            while (i < body.length && body[i] !== quote) i++
+            if (i === body.length || i === valueStart) return null
+
+            value = body.slice(valueStart, i)
+            i++
+            if (i < body.length && !/\s/.test(body[i])) return null
+        } else {
+            const valueStart = i
+            while (i < body.length && !/\s/.test(body[i])) i++
+            if (i === valueStart) return null
+            value = body.slice(valueStart, i)
+        }
 
         fields[key] = value
     }

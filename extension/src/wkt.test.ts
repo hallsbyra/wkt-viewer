@@ -172,6 +172,25 @@ POLYGON (
         assert.equal(result[0].annotation?.line, 0)
     })
 
+    test('supports quoted awkt metadata values with spaces', () => {
+        const input = '[awkt id=stroke-001 label="existing base fill" note=\'single quoted note\'] POINT (0 0)'
+        const result = extractWkt(input)
+
+        assert.deepStrictEqual(result[0].annotation?.fields, {
+            id: 'stroke-001',
+            label: 'existing base fill',
+            note: 'single quoted note',
+        })
+        assert.equal(result[0].annotation?.label, 'existing base fill')
+    })
+
+    test('ignores awkt metadata with an unclosed quoted value', () => {
+        const result = extractWkt('[awkt id=stroke-001 label="existing base fill] POINT (0 0)')
+
+        assert.equal(result.length, 1)
+        assert.equal(result[0].annotation, undefined)
+    })
+
     test('attaches multiple inline awkt annotations on one line', () => {
         const input = '[DBG] Generated: [awkt id=stroke-002 tag=sweep-01 label=2] LINESTRING (10 0, 20 0), [awkt id=stroke-003 tag=sweep-02 label=3] LINESTRING (0 10, 20 10)'
         const result = extractWkt(input)

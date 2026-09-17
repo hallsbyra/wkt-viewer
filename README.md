@@ -20,11 +20,12 @@ WKT Viewer can attach lightweight metadata to geometries found in generic log fi
 
 ```text
 [awkt id=stroke-01234 tag=sweep-0007 label=01234] LINESTRING (0 0, 10 0)
+[awkt id=base-fill tag=source label="existing base fill"] POLYGON ((0 0, 10 0, 10 10, 0 0))
 ```
 
 The annotation applies to the first WKT geometry after the `[awkt ...]` block, up until the next annotation block. Unannotated WKT still renders normally.
 
-Supported keys are `id`, `tag`, and `label`. Unknown `key=value` fields are preserved for details, but do not affect rendering.
+Supported keys are `id`, `tag`, and `label`. Unknown `key=value` fields are preserved for details, but do not affect rendering. Values containing whitespace must be wrapped in single or double quotes, for example `label="existing base fill"`.
 
 ## Quick Start
 
