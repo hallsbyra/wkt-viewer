@@ -54,6 +54,7 @@
     "lint": "eslint",
     "vscode:prepublish": "npm run clean && npm run build",
     "watch": "tsc --build --watch",
+    "prepare:dev-host": "node scripts/prepare-dev-host.mjs",
     "package": "vsce package",
     "test": "npm run test:extension && npm run test:webview",
     "test:extension": "npm run build -w extension && vscode-test --fail-zero",
