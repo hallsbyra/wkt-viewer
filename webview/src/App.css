@@ -176,3 +176,16 @@ body {
     min-width: 0;
     position: relative;
 }
+
+/* Leaflet focuses the map after a mouse click. Avoid showing its browser
+   outline while preserving the focus indicator for keyboard navigation. */
+.map-container .leaflet-container:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Leaflet adds focus listeners to shapes with tooltips. Chromium then draws a
+   focus ring around the SVG path's bounding box, despite the shape already
+   having a dedicated selected style. */
+.map-container .leaflet-interactive:focus {
+    outline: none;
+}
