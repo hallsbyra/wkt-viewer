@@ -4,6 +4,20 @@ All notable changes to the "wkt-viewer" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.8.0](https://github.com/hallsbyra/wkt-viewer/compare/v0.7.2...v0.8.0) (2026-09-17)
+
+
+### ✨ Features
+
+* add full geometry zoom controls ([1c99777](https://github.com/hallsbyra/wkt-viewer/commit/1c99777e5ef031d7d34d1a8669f52c3ce7ce1d0d))
+* focus off-screen geometries from the list ([dce3888](https://github.com/hallsbyra/wkt-viewer/commit/dce3888e3a6d1034ad6a34fb8ccd1a413327b87f))
+
+
+### 🐛 Bug Fixes
+
+* remove focus outline from map shapes ([67e2579](https://github.com/hallsbyra/wkt-viewer/commit/67e257951cc13477626c3e052aa28a77f7b77c39))
+* truncate geometry WKT previews ([2454088](https://github.com/hallsbyra/wkt-viewer/commit/2454088008abe249b15743652df70e2df50d53dd))
+
 ## [0.7.2](https://github.com/hallsbyra/wkt-viewer/compare/v0.7.1...v0.7.2) (2026-09-16)
 
 
