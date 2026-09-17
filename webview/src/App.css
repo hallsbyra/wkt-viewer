@@ -178,6 +178,12 @@ body {
     color: var(--vscode-descriptionForeground, #616773);
 }
 
+.geometry-wkt-preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .geometry-type {
     color: var(--vscode-symbolIcon-classForeground, #267344);
 }

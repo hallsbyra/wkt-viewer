@@ -97,7 +97,7 @@ export function GeomObjectsList({
                                     </div>
                                 )}
                                 <div className="geometry-type" style={{ fontFamily: 'monospace', fontSize: 13 }}>{obj.feature.geometry.type}</div>
-                                <div className="geometry-details" style={{ fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all' }}>{obj.token.wkt}</div>
+                                <div className="geometry-details geometry-wkt-preview" style={{ fontFamily: 'monospace', fontSize: 12 }}>{obj.token.wkt}</div>
                             </div>
                         </li>
                     )
