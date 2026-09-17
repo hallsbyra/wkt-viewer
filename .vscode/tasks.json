@@ -28,15 +28,8 @@
 			}
 		},
 		{
-			"label": "Prepare Dev Host",
-			"type": "shell",
-			"command": "npm run prepare:dev-host",
-			"problemMatcher": []
-		},
-		{
 			"label": "Start Dev Env",
 			"dependsOn": [
-				"Prepare Dev Host",
 				"TS Watch",
 				"Vite Dev",
 			],
