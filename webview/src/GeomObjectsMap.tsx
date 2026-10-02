@@ -10,6 +10,7 @@ import { DEFAULT_PATH_STYLE, POINT_RADIUS, POINT_RADIUS_SELECTED, SELECTED_PATH_
 export function GeomObjectsMap({
     geomObjects,
     selectedId,
+    selectedIds,
     onSelect,
     fitId,
     listFocusId,
@@ -17,6 +18,7 @@ export function GeomObjectsMap({
 }: {
     geomObjects: GeomObject[]
     selectedId?: number | null
+    selectedIds: number[]
     onSelect?: (obj: GeomObject) => void
     fitId: number
     listFocusId: number
@@ -45,7 +47,7 @@ export function GeomObjectsMap({
         }
         if (!bounds || hasFittedCurrentScope.current) return
 
-        map.fitBounds(bounds, { padding: [10, 10] })
+        fitGeometryBounds(map, LL.latLngBounds(bounds))
         hasFittedCurrentScope.current = true
     }, [bounds, fitId, map])
 
@@ -67,7 +69,7 @@ export function GeomObjectsMap({
 
     // Create marker for POINT geometries.
     function createPointMarker(geomObj: GeomObject, latlng: LL.LatLng) {
-        return LL.circleMarker(latlng, getGeometryStyle(geomObj, selectedId))
+        return LL.circleMarker(latlng, getGeometryStyle(geomObj, selectedIds))
     }
 
     const handleFeatureClick = (geomObj: GeomObject) => (_feature: GeoJSON.Feature, layer: LL.Layer) => {
@@ -78,10 +80,10 @@ export function GeomObjectsMap({
         bindMetadataTooltip(geomObj, layer)
     }
 
-    const selectedGeometry = useMemo(() => {
-        if (selectedId == null) return null
-        return geomObjects.find(geom => geom.id === selectedId)?.feature.geometry ?? null
-    }, [selectedId, geomObjects])
+    const selectedGeometry = useMemo<GeoJSON.Geometry>(() => ({
+        type: 'GeometryCollection',
+        geometries: geomObjects.filter(geom => selectedIds.includes(geom.id)).map(geom => geom.feature.geometry),
+    }), [selectedIds, geomObjects])
 
     useMiddleButtonPanning(map)
 
@@ -92,11 +94,11 @@ export function GeomObjectsMap({
                     key={`${geomObj.id}:${geomObj.token.end}:${geomObj.token.wkt}`}
                     data={geomObj.feature}
                     onEachFeature={handleFeatureClick(geomObj)}
-                    style={() => getGeometryStyle(geomObj, selectedId)}
+                    style={() => getGeometryStyle(geomObj, selectedIds)}
                     pointToLayer={(_feature, latlng) => createPointMarker(geomObj, latlng)}
                 />
             ))}
-            {selectedGeometry && <VisibleDirectionMarkers geometry={selectedGeometry} />}
+            {selectedIds.length > 0 && <VisibleDirectionMarkers geometry={selectedGeometry} />}
         </>
     )
 }
@@ -108,8 +110,8 @@ export function GeomObjectsMap({
  * CircleMarker also reads radius from setStyle, which lets selection resize
  * POINT geometries after they have been created.
  */
-export function getGeometryStyle(geomObj: GeomObject, selectedId?: number | null): LL.CircleMarkerOptions {
-    if (geomObj.id === selectedId) {
+export function getGeometryStyle(geomObj: GeomObject, selectedIds: number[] = []): LL.CircleMarkerOptions {
+    if (selectedIds.includes(geomObj.id)) {
         return { ...SELECTED_PATH_STYLE, radius: POINT_RADIUS_SELECTED }
     }
 

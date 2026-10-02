@@ -79,7 +79,8 @@ body {
 }
 
 .sidebar button:focus-visible,
-.geometry-search:focus-visible {
+.geometry-search:focus-visible,
+.geometry-row:focus-visible {
     outline: 1px solid var(--vscode-focusBorder, #007acc);
     outline-offset: 2px;
 }
@@ -140,6 +141,7 @@ body {
 }
 
 .geometry-row {
+    user-select: none;
     margin-bottom: 6px;
     padding: 8px;
     border: 1px solid var(--vscode-contrastBorder, transparent);
@@ -197,6 +199,29 @@ body {
     flex: 1;
     min-width: 0;
     position: relative;
+}
+
+.map-error {
+    box-sizing: border-box;
+    padding: 24px;
+    height: 100%;
+    background: var(--vscode-editor-background, #fff);
+    color: var(--vscode-editor-foreground, #333);
+}
+
+.map-error button {
+    padding: 6px 10px;
+    border: 1px solid var(--vscode-button-border, transparent);
+    border-radius: 3px;
+    background: var(--vscode-button-background, #007acc);
+    color: var(--vscode-button-foreground, #fff);
+    font: inherit;
+    cursor: pointer;
+}
+
+.map-error button:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder, #007acc);
+    outline-offset: 2px;
 }
 
 /* Leaflet focuses the map after a mouse click. Avoid showing its browser

@@ -11,7 +11,9 @@ Visualize and navigate files containing WKT (Well Known Text) geometries in Visu
 - Instantly visualizes WKT geometries in the current text editor.
 - Highlights the current geometry as you navigate through text.
 - Selects the corresponding text when you click a geometry in the viewer.
-- Lets you lock the viewer to a selected text area. The area follows edits and remains independent while you navigate the document.
+- Supports multiple geometry selections with Ctrl/Cmd-click and Shift-click in the list, synchronized with separate selections in the editor.
+- Locks the viewer to selected geometries with the padlock, including multiple text selections. Unlocking restores the preceding view.
+- Keeps locked selections independent of editor navigation while tracking edits to the source text.
 - Supports optional `[awkt ...]` metadata annotations for WKT embedded in logs.
 
 ## Annotated WKT Metadata
@@ -33,11 +35,11 @@ Supported keys are `id`, `tag`, and `label`. Unknown `key=value` fields are pres
 2. Open a file containing WKT geometries.
 3. Run `Start WKT Viewer` from the command palette.
 
-The viewer follows your text selection automatically. Any non-empty primary selection becomes the viewing area after a short pause, even a single character or an individual WKT. Only complete WKT geometries inside it are shown; a selection without any complete WKT produces an empty view.
+Use Ctrl/Cmd-click in the shape list to add or remove objects, or Shift-click to select a range of visible rows. Each selected object gets its own text selection in the editor. Multiple selections or cursors in the editor also highlight the corresponding objects in the viewer.
 
-Clicking the line range marks the whole area in the editor. Clicking inside the area highlights a geometry without changing the area or zoom. Clicking outside returns to the whole document. Clicking a geometry in the viewer selects its source text without changing the area.
+Editor selections highlight geometries without filtering the view. Click the **padlock** (**Visa och lås till markerade**) to show only the marked objects in both the list and the map. A cursor or partial text selection inside a WKT includes that complete geometry. Separate text selections include complete WKT within each selection; geometries in the gaps remain hidden. The padlock is disabled when no geometry is marked.
 
-The padlock beside the line range freezes the area so that selections and navigation cannot change it. Unlocking takes effect on your next editor selection. Areas and locks are remembered per document until it is closed.
+The filtered view stays locked while you change selections or navigate the document and follows text edits. Its status shows the number of visible geometries. Click the padlock again (**Lås upp och visa föregående vy**) to restore the preceding view, keeping the current editor selections. Locks are remembered per document until it is closed.
 
 ## Extension Settings
 
@@ -55,13 +57,15 @@ npm test
 
 ### Running the Extension
 
-- <kbd>F5</kbd>: Launch the extension in an Extension Development Host. The first start starts TypeScript watch mode and the Vite dev server; later starts reuse them.
+- <kbd>F5</kbd>: Start TypeScript watch mode and the Vite dev server, open an isolated Extension Development Host, and attach the debugger once the host is ready. Later starts reload and show the development window while reusing the servers.
 - <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> -> **Start Dev Env**: Start TypeScript watch mode and the Vite dev server.
 
 ### Debugging
 
 - Extension backend: set breakpoints and press <kbd>F5</kbd>.
 - Webview frontend: run `Developer: Open Webview Developer Tools` from the command palette.
+
+The development host uses the current VS Code executable and a separate profile under `.vscode-test/`. It starts with an inspector on port `9333`; the debugger attaches without injecting the F5 launch bootstrap, avoiding the startup crash reported in [microsoft/vscode#336233](https://github.com/microsoft/vscode/issues/336233). Stopping debugging detaches from the host; close the development window to stop it. Pressing F5 again reloads the development host to load the new compiled code. Startup errors are logged to `.vscode-test/dev-host-launch.log`.
 
 ## Contributing
 

@@ -5,18 +5,45 @@ import { getAnnotationTitle, getTagColor, matchesAnnotationQuery } from './annot
 export function GeomObjectsList({
     geomObjects,
     selectedId,
+    selectedIds,
+    sourceUri,
     onSelect,
     onFit,
 }: {
     geomObjects: GeomObject[]
     selectedId?: number | null
-    onSelect?: (obj: GeomObject) => void
+    selectedIds: number[]
+    sourceUri?: string
+    onSelect?: (objects: GeomObject[], focus: GeomObject) => void
     onFit?: (obj: GeomObject) => void
 }) {
     const listContainerRef = useRef<HTMLUListElement | null>(null)
     const [query, setQuery] = useState('')
+    const anchor = useRef<number | null>(null)
+    useEffect(() => {
+        anchor.current = null
+        setQuery('')
+    }, [sourceUri])
     const normalizedQuery = query.trim().toLowerCase()
-    const filteredGeomObjects = geomObjects.filter(obj => matchesAnnotationQuery(obj.token.annotation, normalizedQuery))
+    const filteredGeomObjects = geomObjects.map((obj, originalIndex) => ({ obj, originalIndex }))
+        .filter(({ obj }) => matchesAnnotationQuery(obj.token.annotation, normalizedQuery))
+
+    const selectRow = (obj: GeomObject, extend: boolean, toggle: boolean) => {
+        let ids = toggle ? [...selectedIds] : []
+        if (extend && anchor.current !== null) {
+            const first = filteredGeomObjects.findIndex(row => row.obj.id === anchor.current)
+            const last = filteredGeomObjects.findIndex(row => row.obj.id === obj.id)
+            if (first >= 0) ids.push(...filteredGeomObjects.slice(Math.min(first, last), Math.max(first, last) + 1).map(row => row.obj.id))
+            else ids.push(obj.id)
+        } else {
+            ids = toggle && ids.includes(obj.id) ? ids.filter(id => id !== obj.id) : [...ids, obj.id]
+            anchor.current = obj.id
+        }
+        const objects = geomObjects.filter(object => ids.includes(object.id))
+        // Put the clicked item first so the editor reveals the item just chosen.
+        objects.sort((a, b) => Number(b.id === obj.id) - Number(a.id === obj.id))
+        onSelect?.(objects, obj)
+    }
     
     /* -------- Scroll the selected list item into view -------- */
     useEffect(() => {
@@ -37,23 +64,35 @@ export function GeomObjectsList({
                 placeholder="Sök id, tagg eller etikett"
             />
             <ul 
+                role="listbox"
+                aria-label="Geometrier"
+                aria-multiselectable="true"
                 ref={listContainerRef}
                 style={{ listStyle: 'none', padding: 0, margin: 0, overflowY: 'auto', minHeight: 0, flex: 1 }}
             >
-                {filteredGeomObjects.map((obj) => {
-                    const originalIndex = geomObjects.indexOf(obj)
+                {filteredGeomObjects.map(({ obj, originalIndex }) => {
                     const annotation = obj.token.annotation
                     const tagColor = getTagColor(annotation?.tag)
                     const title = annotation ? getAnnotationTitle(annotation) : undefined
 
                     return (
                         <li key={obj.id}
-                            className={`geometry-row${obj.id === selectedId ? ' is-selected' : ''}`}
+                            className={`geometry-row${selectedIds.includes(obj.id) ? ' is-selected' : ''}`}
+                            role="option"
+                            aria-selected={selectedIds.includes(obj.id)}
+                            tabIndex={0}
                             // So that we can find this element and scroll it into view
                             data-geom-id={obj.id}
                             title={title}
-                            onClick={() => onSelect && onSelect(obj)}
-                            onDoubleClick={() => onFit?.(obj)}
+                            onClick={event => selectRow(obj, event.shiftKey, event.ctrlKey || event.metaKey)}
+                            onKeyDown={event => {
+                                if (event.target !== event.currentTarget) return
+                                if (event.key === ' ' || event.key === 'Enter') {
+                                    event.preventDefault()
+                                    selectRow(obj, event.shiftKey, event.ctrlKey || event.metaKey)
+                                }
+                            }}
+                            onDoubleClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey) onFit?.(obj) }}
                         >
 
                             <div style={{ flex: 1, minWidth: 0 }}>

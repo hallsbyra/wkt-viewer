@@ -18,9 +18,12 @@ export type WktToken = {
     annotation?: WktAnnotation
 }
 
+export type TextRange = { start: number, end: number }
+
 export type ViewingScope =
     | { kind: 'document' }
     | { kind: 'area', start: number, end: number }
+    | { kind: 'selection', ranges: TextRange[] }
 
 export type SourceDocument = {
     uri: string
@@ -34,23 +37,23 @@ export type MsgToWebview =
         wkt: WktToken[]
         source: SourceDocument
         scope: ViewingScope
-        areaLocked: boolean
+        viewLocked: boolean
         areaLineRange?: { start: number, end: number }
         fitId: number
     }
     | {
         command: 'select'
         source: SourceDocument
-        start: number
-        end: number
+        ranges: TextRange[]
     }
 
 export type ViewingCommand =
     | { command: 'fitAll' }
     | { command: 'selectArea' }
-    | { command: 'setAreaLocked', locked: boolean }
+    | { command: 'setSelectionLocked', locked: true, ranges: TextRange[] }
+    | { command: 'setSelectionLocked', locked: false }
 
 export type MsgFromWebview =
     | { command: 'ready' }
-    | { command: 'select', source: SourceDocument, start: number, end: number }
+    | { command: 'select', source: SourceDocument, ranges: TextRange[] }
     | (ViewingCommand & { source: SourceDocument })

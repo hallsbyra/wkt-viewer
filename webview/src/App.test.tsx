@@ -2,7 +2,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { type MsgFromWebview, type MsgToWebview, type WktToken } from '@wkt-viewer/shared'
-import App, { findSelectedGeomObject, wktTokensToGeomObjects } from './App'
+import App, { findSelectedGeomObject, findSelectedGeomObjects, wktTokensToGeomObjects } from './App'
 
 const testGlobal = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
 testGlobal.IS_REACT_ACT_ENVIRONMENT = true
@@ -41,7 +41,7 @@ function updateMessage(wkt: WktToken[]): Extract<MsgToWebview, { command: 'updat
         wkt,
         source,
         scope: { kind: 'document' },
-        areaLocked: false,
+        viewLocked: false,
         fitId: 0,
     }
 }
@@ -168,6 +168,12 @@ describe('App map configuration', () => {
 })
 
 describe('findSelectedGeomObject', () => {
+    it('matches every WKT in separate text selections and leaves gaps unselected', () => {
+        const objects = wktTokensToGeomObjects([0, 20, 40, 60].map(start => ({ start, end: start + 10, line: 0, endLine: 0, wkt: 'POINT(1 1)' })))
+        expect(findSelectedGeomObjects(objects, [{ start: 0, end: 10 }, { start: 40, end: 70 }], { kind: 'document' }).map(obj => obj.id)).toEqual([0, 40, 60])
+        expect(findSelectedGeomObjects(objects, [{ start: 20, end: 20 }, { start: 40, end: 40 }], { kind: 'document' }).map(obj => obj.id)).toEqual([20, 40])
+    })
+
     it('selects a geometry when the editor selection is on its annotation', () => {
         const geomObjects = wktTokensToGeomObjects([{
             start: 22,
@@ -209,43 +215,198 @@ describe('findSelectedGeomObject', () => {
 })
 
 describe('App VS Code integration', () => {
-    it('shows the automatic viewing status and sends a lock request', () => {
+    const multipleWkt = [0, 20, 40, 60].map(start => ({ start, end: start + 10, line: 0, endLine: 0, wkt: 'POINT(1 1)' }))
+
+    function mountMultiple() {
         const host = document.createElement('div')
         document.body.appendChild(host)
         const root = createRoot(host)
+        act(() => root.render(<App />))
+        act(() => window.dispatchEvent(new MessageEvent('message', { data: updateMessage(multipleWkt) })))
+        return { host, cleanup: () => { act(() => root.unmount()); host.remove() } }
+    }
 
+    function clickRow(host: HTMLElement, id: number, modifiers: MouseEventInit = {}) {
+        act(() => host.querySelector(`[data-geom-id="${id}"]`)!.dispatchEvent(new MouseEvent('click', { bubbles: true, ...modifiers })))
+    }
+
+    function selectedRows(host: HTMLElement) {
+        return Array.from(host.querySelectorAll('.is-selected'), row => Number(row.getAttribute('data-geom-id')))
+    }
+
+    it('keeps the sidebar usable after a map error and allows retrying or changing scope', () => {
+        const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const { host, cleanup } = mountMultiple()
         try {
-            act(() => root.render(<App />))
-            act(() => {
-                window.dispatchEvent(new MessageEvent('message', { data: {
-                    ...updateMessage([]),
-                    scope: { kind: 'area', start: 10, end: 20 },
-                    areaLocked: false,
-                    areaLineRange: { start: 2, end: 3 },
-                } satisfies MsgToWebview }))
-            })
+            const changeScope = (fitId: number) => act(() => window.dispatchEvent(new MessageEvent('message', {
+                data: { ...updateMessage(multipleWkt), fitId },
+            })))
+            reactLeafletMock.map.panTo.mockImplementationOnce(() => { throw new Error('Map failed') })
+            changeScope(1)
+            expect(host.querySelector('[role="alert"]')?.textContent).toContain('Kartan kunde inte visas')
+            expect(host.querySelectorAll('[data-geom-id]')).toHaveLength(4)
+            clickRow(host, 0)
+            expect(selectedRows(host)).toEqual([0])
+            act(() => host.querySelector<HTMLButtonElement>('.map-error button')!.click())
+            expect(host.querySelector('[role="alert"]')).toBeNull()
+            reactLeafletMock.map.panTo.mockImplementationOnce(() => { throw new Error('Map failed again') })
+            changeScope(2)
+            expect(host.querySelector('[role="alert"]')).not.toBeNull()
+            changeScope(3)
+            expect(host.querySelector('[role="alert"]')).toBeNull()
+        } finally { cleanup(); log.mockRestore() }
+    })
 
+    it('toggles list selections with Ctrl/Cmd and selects a contiguous range with Shift', () => {
+        const { host, cleanup } = mountMultiple()
+        try {
+            clickRow(host, 0)
+            clickRow(host, 40, { ctrlKey: true })
+            expect(selectedRows(host)).toEqual([0, 40])
+            expect(postedMessages[postedMessages.length - 1]).toEqual({ command: 'select', source, ranges: [{ start: 40, end: 50 }, { start: 0, end: 10 }] })
+            clickRow(host, 0, { metaKey: true })
+            expect(selectedRows(host)).toEqual([40])
+            clickRow(host, 60, { shiftKey: true })
+            expect(selectedRows(host)).toEqual([0, 20, 40, 60])
+            clickRow(host, 20)
+            expect(selectedRows(host)).toEqual([20])
+            clickRow(host, 20, { ctrlKey: true })
+            expect(selectedRows(host)).toEqual([])
+            expect(postedMessages[postedMessages.length - 1]).toEqual({ command: 'select', source, ranges: [] })
+        } finally { cleanup() }
+    })
+
+    it('reflects multiple editor selections, locks a subset and restores the preceding view with the padlock', () => {
+        const { host, cleanup } = mountMultiple()
+        const ranges = [{ start: 0, end: 10 }, { start: 40, end: 70 }]
+        try {
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: { command: 'select', source, ranges } satisfies MsgToWebview })))
+            expect(selectedRows(host)).toEqual([0, 40, 60])
+            expect(host.querySelectorAll('[data-geom-id]')).toHaveLength(4)
+            act(() => host.querySelector<HTMLButtonElement>('.lock-button')!.click())
+            expect(postedMessages[postedMessages.length - 1]).toEqual({ command: 'setSelectionLocked', locked: true, source,
+                ranges: [{ start: 0, end: 10 }, { start: 40, end: 50 }, { start: 60, end: 70 }],
+            })
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: {
+                ...updateMessage(multipleWkt.filter(token => token.start !== 20)), scope: { kind: 'selection', ranges }, viewLocked: true,
+            } satisfies MsgToWebview })))
+            expect(host.querySelectorAll('[data-geom-id]')).toHaveLength(3)
+            expect(selectedRows(host)).toEqual([0, 40, 60])
             const lockButton = host.querySelector<HTMLButtonElement>('.lock-button')!
-            const scopeButton = host.querySelector<HTMLButtonElement>('.scope-status-button')!
+            expect(lockButton.getAttribute('aria-pressed')).toBe('true')
+            expect(lockButton.title).toBe('Lås upp och visa föregående vy')
+            expect(host.querySelector('.scope-status')?.textContent).toBe('Visar 3 markerade')
+            expect(host.querySelector('.selection-filter-button')).toBeNull()
+            clickRow(host, 40)
+            expect(host.querySelectorAll('[data-geom-id]')).toHaveLength(3)
+            expect(host.querySelector('.scope-status')?.textContent).toBe('Visar 3 markerade')
+            expect(postedMessages[postedMessages.length - 1].command).toBe('select')
+            act(() => lockButton.click())
+            expect(postedMessages[postedMessages.length - 1]).toEqual({ command: 'setSelectionLocked', locked: false, source })
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: updateMessage(multipleWkt) })))
+            expect(host.querySelectorAll('[data-geom-id]')).toHaveLength(4)
+            expect(host.querySelector('.lock-button')?.getAttribute('aria-pressed')).toBe('false')
+            expect(selectedRows(host)).toEqual([40])
+        } finally { cleanup() }
+    })
+
+    it('supports keyboard multiselection without treating a zoom button keypress as row selection', () => {
+        const { host, cleanup } = mountMultiple()
+        try {
+            act(() => host.querySelector('[data-geom-id="0"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
+            act(() => host.querySelector('[data-geom-id="40"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', ctrlKey: true, bubbles: true })))
+            expect(selectedRows(host)).toEqual([0, 40])
+            expect(host.querySelector('[role="listbox"]')?.getAttribute('aria-multiselectable')).toBe('true')
+            expect(host.querySelector('[data-geom-id="40"]')?.getAttribute('aria-selected')).toBe('true')
+            act(() => host.querySelector('[data-geom-id="20"] .geometry-fit-button')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
+            expect(selectedRows(host)).toEqual([0, 40])
+        } finally { cleanup() }
+    })
+
+    it('includes cursor geometries alongside nonempty editor selections when filtering', () => {
+        const { host, cleanup } = mountMultiple()
+        try {
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: {
+                command: 'select', source, ranges: [{ start: 0, end: 10 }, { start: 42, end: 42 }, { start: 15, end: 15 }],
+            } satisfies MsgToWebview })))
+            expect(selectedRows(host)).toEqual([0, 40])
+            act(() => host.querySelector<HTMLButtonElement>('.lock-button')!.click())
+            expect(postedMessages[postedMessages.length - 1]).toEqual({
+                command: 'setSelectionLocked', locked: true, source, ranges: [{ start: 0, end: 10 }, { start: 40, end: 50 }],
+            })
+        } finally { cleanup() }
+    })
+
+    it('keeps the primary editor selection as the focused row when it is later in the document', () => {
+        const { host, cleanup } = mountMultiple()
+        try {
+            vi.mocked(HTMLElement.prototype.scrollIntoView).mockClear()
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: {
+                command: 'select', source, ranges: [{ start: 40, end: 50 }, { start: 0, end: 10 }],
+            } satisfies MsgToWebview })))
+            expect(selectedRows(host)).toEqual([0, 40])
+            const calls = vi.mocked(HTMLElement.prototype.scrollIntoView).mock.instances
+            const focusedRow = calls[calls.length - 1] as HTMLElement
+            expect(focusedRow.getAttribute('data-geom-id')).toBe('40')
+        } finally { cleanup() }
+    })
+
+    it('ignores stale editor selections and recomputes the selection after a text edit', () => {
+        const { host, cleanup } = mountMultiple()
+        try {
+            clickRow(host, 0)
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: {
+                command: 'select', source: { ...source, version: 0 }, ranges: [{ start: 40, end: 50 }],
+            } satisfies MsgToWebview })))
+            expect(selectedRows(host)).toEqual([0])
+            const nextSource = { ...source, version: 2 }
+            act(() => {
+                window.dispatchEvent(new MessageEvent('message', { data: { ...updateMessage(multipleWkt.map(token => ({ ...token, start: token.start + 5, end: token.end + 5 }))), source: nextSource } }))
+                window.dispatchEvent(new MessageEvent('message', { data: { command: 'select', source: nextSource, ranges: [{ start: 5, end: 15 }, { start: 45, end: 55 }] } satisfies MsgToWebview }))
+            })
+            expect(selectedRows(host)).toEqual([5, 45])
+        } finally { cleanup() }
+    })
+
+    it('enables the padlock only for a marked geometry, including a partial text selection', () => {
+        const { host, cleanup } = mountMultiple()
+        try {
+            const lockButton = host.querySelector<HTMLButtonElement>('.lock-button')!
+            expect(lockButton.disabled).toBe(true)
+            expect(lockButton.title).toBe('Visa och lås till markerade')
             expect(lockButton.getAttribute('aria-pressed')).toBe('false')
-            expect(host.querySelector('.scope-status')?.textContent).toBe('Rader 2–3')
-            act(() => scopeButton.click())
+            act(() => lockButton.click())
+            expect(postedMessages).toEqual([{ command: 'ready' }])
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: {
+                command: 'select', source, ranges: [{ start: 12, end: 15 }],
+            } satisfies MsgToWebview })))
+            expect(lockButton.disabled).toBe(true)
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: {
+                command: 'select', source, ranges: [{ start: 42, end: 43 }],
+            } satisfies MsgToWebview })))
+            expect(selectedRows(host)).toEqual([40])
+            expect(lockButton.disabled).toBe(false)
+            expect(host.querySelectorAll('[data-geom-id]')).toHaveLength(4)
             act(() => lockButton.click())
             expect(postedMessages).toEqual([
                 { command: 'ready' },
-                { command: 'selectArea', source },
-                { command: 'setAreaLocked', locked: true, source },
+                { command: 'setSelectionLocked', locked: true, ranges: [{ start: 40, end: 50 }], source },
             ])
+        } finally { cleanup() }
+    })
 
-            act(() => {
-                window.dispatchEvent(new MessageEvent('message', { data: updateMessage([]) }))
-            })
-            expect(host.querySelector('.scope-status')?.textContent).toBe('Hela dokumentet')
-            expect(host.querySelector('.lock-button')).toBeNull()
-        } finally {
-            act(() => root.unmount())
-            host.remove()
-        }
+    it('still offers unlocking when no geometries remain in a locked view', () => {
+        const { host, cleanup } = mountMultiple()
+        try {
+            act(() => window.dispatchEvent(new MessageEvent('message', { data: {
+                ...updateMessage([]), scope: { kind: 'selection', ranges: [{ start: 0, end: 0 }] }, viewLocked: true,
+            } satisfies MsgToWebview })))
+            const lockButton = host.querySelector<HTMLButtonElement>('.lock-button')!
+            expect(lockButton.disabled).toBe(false)
+            expect(host.querySelector('.scope-status')?.textContent).toBe('Visar 0 markerade')
+            act(() => lockButton.click())
+            expect(postedMessages[postedMessages.length - 1]).toEqual({ command: 'setSelectionLocked', locked: false, source })
+        } finally { cleanup() }
     })
 
     it('displays valid WKT from a document containing a false positive', () => {
@@ -303,7 +464,7 @@ describe('App VS Code integration', () => {
             act(() => {
                 window.dispatchEvent(new MessageEvent('message', { data: updateMessage(wkt) }))
                 window.dispatchEvent(new MessageEvent('message', { data: {
-                    command: 'select', source, start: 0, end: 0,
+                    command: 'select', source, ranges: [{ start: 0, end: 0 }],
                 } satisfies MsgToWebview }))
             })
             expect(host.querySelector('[data-geom-id="0"]')?.classList.contains('is-selected')).toBe(true)
@@ -335,7 +496,7 @@ describe('App VS Code integration', () => {
             act(() => {
                 window.dispatchEvent(new MessageEvent('message', { data: updateMessage(wkt) }))
                 window.dispatchEvent(new MessageEvent('message', { data: {
-                    command: 'select', source, start: 0, end: 0,
+                    command: 'select', source, ranges: [{ start: 0, end: 0 }],
                 } satisfies MsgToWebview }))
             })
 

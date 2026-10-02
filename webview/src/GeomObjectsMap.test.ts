@@ -30,7 +30,7 @@ const taggedPoint: GeomObject = {
 
 describe('getGeometryStyle', () => {
     it('uses the selected colors and a larger radius even when a geometry has a tag', () => {
-        expect(getGeometryStyle(taggedPoint, taggedPoint.id)).toMatchObject({
+        expect(getGeometryStyle(taggedPoint, [99, taggedPoint.id])).toMatchObject({
             color: COLOR.selectedStroke,
             fillColor: COLOR.selectedFill,
             radius: POINT_RADIUS_SELECTED,
@@ -38,7 +38,7 @@ describe('getGeometryStyle', () => {
     })
 
     it('keeps the tag color and normal radius when the geometry is not selected', () => {
-        const style = getGeometryStyle(taggedPoint, 99)
+        const style = getGeometryStyle(taggedPoint, [99, 100])
 
         expect(style.radius).toBe(POINT_RADIUS)
         expect(style.color).toBe(style.fillColor)

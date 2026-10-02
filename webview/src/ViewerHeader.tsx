@@ -1,16 +1,19 @@
-import { type SourceDocument, type ViewingCommand, type ViewingScope } from '@wkt-viewer/shared'
+import { type SourceDocument, type TextRange, type ViewingCommand, type ViewingScope } from '@wkt-viewer/shared'
 
-export function ViewerHeader({ source, scope, areaLocked, areaLineRange, onCommand }: {
+export function ViewerHeader({ source, scope, viewLocked, selectedRanges, visibleCount, areaLineRange, onCommand }: {
     source: SourceDocument | null
     scope: ViewingScope
-    areaLocked: boolean
+    viewLocked: boolean
+    selectedRanges: TextRange[]
+    visibleCount: number
     areaLineRange?: { start: number, end: number }
     onCommand: (command: ViewingCommand) => void
 }) {
     const areaActive = scope.kind === 'area'
     const scopeStatus = areaActive && areaLineRange
         ? `Rader ${areaLineRange.start}–${areaLineRange.end}`
-        : 'Hela dokumentet'
+        : scope.kind === 'selection' ? `Visar ${visibleCount} markerade` : 'Hela dokumentet'
+    const lockTitle = viewLocked ? 'Lås upp och visa föregående vy' : 'Visa och lås till markerade'
 
     return (
         <header className="viewer-header">
@@ -28,17 +31,18 @@ export function ViewerHeader({ source, scope, areaLocked, areaLineRange, onComma
                         {scopeStatus}
                     </button>
                     : <span className="scope-status">{scopeStatus}</span>}
-                {areaActive && (
-                    <button
-                        className="icon-button lock-button"
-                        aria-label="Lås område"
-                        aria-pressed={areaLocked}
-                        title={areaLocked ? 'Lås upp området' : 'Lås området så att textmarkeringar inte ändrar det'}
-                        onClick={() => onCommand({ command: 'setAreaLocked', locked: !areaLocked })}
-                    >
-                        <HeaderIcon name={areaLocked ? 'locked' : 'unlocked'} />
-                    </button>
-                )}
+                <button
+                    className="icon-button lock-button"
+                    aria-label={lockTitle}
+                    aria-pressed={viewLocked}
+                    title={lockTitle}
+                    disabled={!source || (!viewLocked && !selectedRanges.length)}
+                    onClick={() => onCommand(viewLocked
+                        ? { command: 'setSelectionLocked', locked: false }
+                        : { command: 'setSelectionLocked', locked: true, ranges: selectedRanges })}
+                >
+                    <HeaderIcon name={viewLocked ? 'locked' : 'unlocked'} />
+                </button>
                 <button
                     className="icon-button"
                     aria-label="Zooma till alla geometrier"

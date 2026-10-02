@@ -1,8 +1,18 @@
 import * as assert from 'assert'
 import * as vscode from 'vscode'
-import { DEFAULT_MAX_GEOMETRIES, normalizeMaxGeometries } from '../extension.js'
+import { DEFAULT_MAX_GEOMETRIES, normalizeMaxGeometries, selectTextInEditor } from '../extension.js'
 
 suite('WKT Viewer extension', () => {
+    test('selects separate WKT source texts and clears the last selection to a cursor', async () => {
+        const document = await vscode.workspace.openTextDocument({ content: 'POINT(0 0)\nPOINT(1 1)\nPOINT(2 2)' })
+        const editor = await vscode.window.showTextDocument(document)
+        selectTextInEditor(editor, [{ start: 22, end: 32 }, { start: 0, end: 10 }])
+        assert.deepStrictEqual(editor.selections.map(selection => document.getText(selection)), ['POINT(2 2)', 'POINT(0 0)'])
+        selectTextInEditor(editor, [])
+        assert.strictEqual(editor.selections.length, 1)
+        assert.ok(editor.selection.isEmpty)
+    })
+
 	teardown(async () => {
 		await vscode.commands.executeCommand('workbench.action.closeAllEditors')
 	})

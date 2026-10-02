@@ -1,61 +1,63 @@
 import * as assert from 'assert'
 import { ViewingSession } from './viewingSession.js'
 
-const source = { uri: 'file:///test.cs', version: 1, filename: 'test.cs' }
+const uri = 'file:///test.cs'
 
-suite('automatic viewing area', () => {
-    test('uses an existing selection when the viewer opens without replacing a saved area', () => {
-        const session = new ViewingSession(() => {}, 1)
-        session.initializeFromSelection(source, 10, 20)
-        assert.deepStrictEqual(session.getView(source.uri), { scope: { kind: 'area', start: 10, end: 20 }, locked: false })
-
-        session.setAreaLocked(source.uri, true)
-        session.initializeFromSelection(source, 30, 40)
-        assert.deepStrictEqual(session.getView(source.uri), { scope: { kind: 'area', start: 10, end: 20 }, locked: true })
+suite('explicit viewing selection', () => {
+    test('locks separate ranges, follows edits and restores the preceding view', () => {
+        const session = new ViewingSession()
+        session.lockSelection(uri, [{ start: 20, end: 30 }, { start: 60, end: 70 }])
+        assert.deepStrictEqual(session.getView(uri).scope, {
+            kind: 'selection', ranges: [{ start: 20, end: 30 }, { start: 60, end: 70 }],
+        })
+        assert.strictEqual(session.getView(uri).locked, true)
+        session.updateDocument(uri, [{ rangeOffset: 0, rangeLength: 0, text: 'abc' }] as never)
+        assert.deepStrictEqual(session.getView(uri).scope, {
+            kind: 'selection', ranges: [{ start: 23, end: 33 }, { start: 63, end: 73 }],
+        })
+        session.unlock(uri)
+        assert.deepStrictEqual(session.getView(uri), { scope: { kind: 'document' }, locked: false })
+        session.dispose()
     })
 
-    test('uses every non-empty selection as an area and a click outside returns to the document', async () => {
-        const changes: unknown[] = []
-        const session = new ViewingSession(source => changes.push(source), 1)
-        session.selectionChanged(source, 10, 11, true)
-        await waitForSelection()
-        assert.deepStrictEqual(session.getView(source.uri), { scope: { kind: 'area', start: 10, end: 11 }, locked: false })
-        assert.deepStrictEqual(changes, [source])
-
-        // Clicking inside selects a geometry in the viewer, but keeps the area and map extent.
-        session.selectionChanged(source, 10, 10, true)
-        await waitForSelection()
-        assert.deepStrictEqual(changes, [source])
-
-        session.selectionChanged(source, 11, 11, true)
-        await waitForSelection()
-        assert.deepStrictEqual(session.getView(source.uri), { scope: { kind: 'document' }, locked: false })
-        assert.deepStrictEqual(changes, [source, source])
+    test('keeps the locked subset unchanged until unlocked and copies input ranges', () => {
+        const session = new ViewingSession()
+        const ranges = [{ start: 10, end: 20 }]
+        session.lockSelection(uri, ranges)
+        ranges[0].end = 100
+        session.lockSelection(uri, [{ start: 30, end: 40 }])
+        assert.deepStrictEqual(session.getView(uri).scope, { kind: 'selection', ranges: [{ start: 10, end: 20 }] })
+        session.unlock(uri)
+        session.lockSelection(uri, [{ start: 30, end: 40 }])
+        assert.deepStrictEqual(session.getView(uri).scope, { kind: 'selection', ranges: [{ start: 30, end: 40 }] })
+        session.unlock(uri)
+        assert.deepStrictEqual(session.getView(uri), { scope: { kind: 'document' }, locked: false })
+        session.dispose()
     })
 
-    test('ignores viewer navigation, pauses while locked, and only follows the latest selection', async () => {
-        const changes: unknown[] = []
-        const session = new ViewingSession(source => changes.push(source), 1)
-        session.selectionChanged(source, 10, 20, false)
-        await waitForSelection()
-        assert.deepStrictEqual(session.getView(source.uri), { scope: { kind: 'document' }, locked: false })
+    test('keeps document locks independent and forgets them when a document closes', () => {
+        const session = new ViewingSession()
+        session.lockSelection(uri, [{ start: 10, end: 20 }])
+        assert.deepStrictEqual(session.getView('other'), { scope: { kind: 'document' }, locked: false })
+        session.lockSelection('other', [{ start: 30, end: 40 }])
+        session.closeDocument(uri)
+        assert.deepStrictEqual(session.getView(uri), { scope: { kind: 'document' }, locked: false })
+        assert.strictEqual(session.getView('other').locked, true)
+        session.dispose()
+        assert.deepStrictEqual(session.getView('other'), { scope: { kind: 'document' }, locked: false })
+    })
 
-        session.selectionChanged(source, 10, 20, true)
-        await waitForSelection()
-        session.setAreaLocked(source.uri, true)
-        session.selectionChanged(source, 30, 40, true)
-        await waitForSelection()
-        assert.deepStrictEqual(session.getView(source.uri), { scope: { kind: 'area', start: 10, end: 20 }, locked: true })
-
-        session.setAreaLocked(source.uri, false)
-        session.selectionChanged(source, 30, 40, true)
-        session.selectionChanged(source, 50, 60, true)
-        await waitForSelection()
-        assert.deepStrictEqual(session.getView(source.uri), { scope: { kind: 'area', start: 50, end: 60 }, locked: false })
-        assert.strictEqual(changes.length, 2)
+    test('does not lock empty selections and allows unlocking after every selected shape is deleted', () => {
+        const session = new ViewingSession()
+        session.lockSelection(uri, [{ start: 10, end: 10 }])
+        assert.deepStrictEqual(session.getView(uri), { scope: { kind: 'document' }, locked: false })
+        session.unlock(uri)
+        session.lockSelection(uri, [{ start: 10, end: 20 }])
+        session.updateDocument(uri, [{ rangeOffset: 10, rangeLength: 10, text: '' }] as never)
+        assert.deepStrictEqual(session.getView(uri).scope, { kind: 'selection', ranges: [{ start: 10, end: 10 }] })
+        assert.strictEqual(session.getView(uri).locked, true)
+        session.unlock(uri)
+        assert.deepStrictEqual(session.getView(uri), { scope: { kind: 'document' }, locked: false })
+        session.dispose()
     })
 })
-
-function waitForSelection(): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, 5))
-}
