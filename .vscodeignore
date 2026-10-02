@@ -1,9 +1,11 @@
 .gitignore
+**/AGENTS.md
 .github/**
 .release-please-manifest.json
 release-please-config.json
 .vscode-test/**
 .vscode/**
+scripts/**
 .yarnrc
 **/.vscode-test.*
 **/*.map

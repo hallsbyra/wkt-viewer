@@ -28,6 +28,18 @@
 			}
 		},
 		{
+			"label": "Start Dev Host",
+			"type": "process",
+			"command": "node",
+			"args": [
+				"${workspaceFolder}/scripts/start-dev-host.mjs",
+				"${execPath}"
+			],
+			"options": { "cwd": "${workspaceFolder}" },
+			"dependsOn": "Start Dev Env",
+			"problemMatcher": []
+		},
+		{
 			"label": "Start Dev Env",
 			"dependsOn": [
 				"TS Watch",

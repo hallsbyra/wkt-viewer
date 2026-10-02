@@ -7,16 +7,17 @@
 	"configurations": [
 		{
 			"name": "Run Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
-			],
+			"type": "node",
+			"request": "attach",
+			"address": "127.0.0.1",
+			"port": 9333,
+			"timeout": 30000,
+			"autoAttachChildProcesses": false,
+			"restart": false,
 			"outFiles": [
 				"${workspaceFolder}/extension/dist/**/*.js"
 			],
-			"preLaunchTask": "Start Dev Env"
+			"preLaunchTask": "Start Dev Host"
 		},
 	]
 }
